@@ -895,7 +895,7 @@ async function loadCatalogFromSheet() {
         id: familyId,
         name: normalizedFamilyName,
         type: normalizedType,
-        open: normalizedType === "individual",
+        open: false,
         products: [],
         sortIndex: rowIndex,
       });
