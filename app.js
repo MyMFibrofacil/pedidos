@@ -484,6 +484,15 @@ function hasPlateVariants(family) {
   return family?.type === "grupo" && getFamilyVariants(family).length > 1;
 }
 
+function getSinglePlateReference(family) {
+  if (family?.type !== "grupo") return "";
+  const variants = getFamilyVariants(family);
+  if (variants.length === 1) {
+    return String(variants[0].plateLabel || "").trim();
+  }
+  return "";
+}
+
 function getVariantBasePlates(variant) {
   return (variant?.products || []).reduce((total, product) => total + (product.plates || 0), 0);
 }
@@ -795,6 +804,7 @@ function searchMatchesFamily(family) {
   return getFamilyProducts(family).some((product) => {
     return (
       product.name.toLowerCase().includes(term) ||
+      String(product.plateLabel || "").toLowerCase().includes(term) ||
       String(product.material || "").toLowerCase().includes(term) ||
       String(product.object || "").toLowerCase().includes(term)
     );
@@ -809,6 +819,7 @@ function filteredProductsForFamily(family) {
     return (
       family.name.toLowerCase().includes(term) ||
       product.name.toLowerCase().includes(term) ||
+      String(product.plateLabel || "").toLowerCase().includes(term) ||
       String(product.material || "").toLowerCase().includes(term) ||
       String(product.object || "").toLowerCase().includes(term)
     );
@@ -988,11 +999,12 @@ function renderGroupFamilyPlateVariants(family) {
 
 function renderIndividualProductRow(product) {
   const qty = getProductQty(product.id);
+  const displayName = getProductDisplayName(product);
 
   return `
     <div class="p-4 flex items-start justify-between gap-4">
       <div class="flex-1 min-w-0">
-        <h4 class="text-sm font-semibold text-slate-800 break-words whitespace-normal leading-snug">${escapeHtml(product.name)}</h4>
+        <h4 class="text-sm font-semibold text-slate-800 break-words whitespace-normal leading-snug">${escapeHtml(displayName)}</h4>
       </div>
       <div class="flex shrink-0 items-center bg-slate-100 rounded-lg p-1">
         <button
@@ -1320,6 +1332,7 @@ function renderFamilyCard(family) {
   const familyQty = getFamilyQty(family.id);
   const familyProducts = getFamilyProducts(family);
   const familyBase = familyProducts.reduce((total, product) => total + product.plates, 0);
+  const plateReference = getSinglePlateReference(family);
   const familyTotal =
     family.type === "grupo"
       ? familyBase * familyQty
@@ -1345,6 +1358,11 @@ function renderFamilyCard(family) {
                   : `${familyProducts.length} producto${familyProducts.length === 1 ? "" : "s"}`
               }
             </p>
+            ${
+              plateReference
+                ? `<p class="text-xs text-slate-500 mt-1">Placa de referencia: ${escapeHtml(plateReference)}</p>`
+                : ""
+            }
             ${
               familyTotal > 0
                 ? `<p class="text-xs text-primary font-semibold mt-1">Pedido actual: ${familyTotal} placas</p>`
@@ -1860,6 +1878,7 @@ function summary() {
         families.push({
           type: "grupo",
           name: family.name,
+          plateReference: getSinglePlateReference(family),
           multiplier: qty,
           totalPlates: familyTotal,
           breakdown,
@@ -1869,7 +1888,7 @@ function summary() {
 
       const selectedProducts = family.products
         .map((product) => ({
-          name: product.name,
+          name: getProductDisplayName(product),
           sourceFamily: product.sourceFamily || family.name,
           qty: getProductQty(product.id),
         }))
@@ -1886,10 +1905,7 @@ function summary() {
         name: family.name,
         totalPlates: familyTotal,
         breakdown: selectedProducts.map((product) => ({
-          name:
-            product.sourceFamily && product.sourceFamily !== family.name
-              ? `${product.sourceFamily} - ${product.name}`
-              : product.name,
+          name: product.name,
           totalPlates: product.qty,
         })),
       });
@@ -1930,6 +1946,20 @@ function formatSectionSummaryValue(section, data) {
   }
 
   return formatSectionCount(section.id, data.totalsByThickness[section.id] || 0);
+}
+
+function sanitizeMessageText(value) {
+  return String(value || "")
+    .replace(/\*/g, "")
+    .trim();
+}
+
+function getProductDisplayName(product) {
+  const baseName = String(product?.name || "").trim();
+  const plateLabel = String(product?.plateLabel || "").trim();
+  if (!baseName) return plateLabel;
+  if (!plateLabel) return baseName;
+  return `${baseName} - ${plateLabel}`;
 }
 
 function renderSummary() {
@@ -2081,6 +2111,10 @@ function renderSummary() {
                     family.type === "grupo"
                       ? `<p class="text-xs text-slate-500">${family.multiplier}x familia</p>`
                       : "";
+                  const plateReferenceLabel =
+                    family.type === "grupo" && family.plateReference
+                      ? `<p class="text-xs text-slate-500">Placa de referencia: ${escapeHtml(family.plateReference)}</p>`
+                      : "";
                   const variantMarkup =
                     family.type === "grupo-placa"
                       ? `
@@ -2122,6 +2156,7 @@ function renderSummary() {
                         <div class="min-w-0">
                           <p class="text-sm font-semibold text-slate-800">${escapeHtml(family.name)}</p>
                           ${multiplierLabel}
+                          ${plateReferenceLabel}
                         </div>
                         <p class="text-sm font-bold text-primary shrink-0">${formatSectionCount(section.id, family.totalPlates)}</p>
                       </div>
@@ -2197,7 +2232,7 @@ function buildWhatsAppText() {
         ? section.name
         : sectionMeta.messageLabel || sectionMeta.summaryLabel || section.name;
     lines.push("");
-    lines.push(`*${sectionLabel}*`);
+    lines.push(`*${sanitizeMessageText(sectionLabel)}*`);
 
     if (section.type === "letters") {
       section.groupedBySize.forEach((group) => {
@@ -2212,9 +2247,9 @@ function buildWhatsAppText() {
 
     if (section.type === "kits") {
       section.families.forEach((family, index) => {
-        lines.push(`${family.name}`);
+        lines.push(`${sanitizeMessageText(family.name)}`);
         family.breakdown.forEach((item) => {
-          lines.push(`- ${item.name}: ${item.qty}`);
+          lines.push(`- ${sanitizeMessageText(item.name)}: ${item.qty}`);
         });
 
         if (index < section.families.length - 1) {
@@ -2226,7 +2261,7 @@ function buildWhatsAppText() {
 
     if (section.type === "price-list") {
       section.products.forEach((product) => {
-        lines.push(`${product.name}`);
+        lines.push(`${sanitizeMessageText(product.name)}`);
         lines.push(`- Cantidad: ${product.qty}`);
       });
       return;
@@ -2234,24 +2269,33 @@ function buildWhatsAppText() {
 
     section.families.forEach((family, index) => {
       if (family.type === "grupo-placa") {
-        lines.push(`${family.name}`);
+        lines.push(`${sanitizeMessageText(family.name)}`);
         family.variants.forEach((variant) => {
           const copiesLabel = variant.multiplier === 1 ? "1 copia" : `${variant.multiplier} copias`;
           lines.push(`- Placa ${variant.plateLabel} (${copiesLabel})`);
           variant.breakdown.forEach((item) => {
-            lines.push(`  - ${item.name}: ${item.totalPlates} placas`);
+            lines.push(`  - ${sanitizeMessageText(item.name)}: ${item.totalPlates} placas`);
           });
         });
       } else if (family.type === "grupo") {
+        lines.push(`${sanitizeMessageText(family.name)}`);
         const copiesLabel = family.multiplier === 1 ? "1 copia" : `${family.multiplier} copias`;
-        lines.push(`${family.name} (${copiesLabel})`);
+        if (family.plateReference) {
+          lines.push(`- Placa ${family.plateReference} (${copiesLabel})`);
+        } else {
+          lines.push(`- ${copiesLabel}`);
+        }
       } else {
-        lines.push(`${family.name}`);
+        lines.push(`${sanitizeMessageText(family.name)}`);
       }
 
       if (family.breakdown) {
         family.breakdown.forEach((item) => {
-          lines.push(`- ${item.name}: ${item.totalPlates} placas`);
+          lines.push(
+            family.type === "grupo"
+              ? `  - ${sanitizeMessageText(item.name)}: ${item.totalPlates} placas`
+              : `- ${sanitizeMessageText(item.name)}: ${item.totalPlates} placas`
+          );
         });
       }
 
@@ -2265,7 +2309,7 @@ function buildWhatsAppText() {
   lines.push("");
   lines.push("RESUMEN FINAL");
   data.sections.forEach((section) => {
-    lines.push(`*Total ${section.name}: ${formatSectionSummaryValue(section, data)}*`);
+    lines.push(`*Total ${sanitizeMessageText(section.name)}: ${formatSectionSummaryValue(section, data)}*`);
   });
   lines.push("");
   lines.push(`*Total general: ${formatGrandTotal(data)}*`);
