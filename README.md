@@ -12,6 +12,7 @@ Hoy el foco principal de este repo esta en `Rivadavia`, que usa Google Sheets co
 - [rivadavia/index.html](./rivadavia/index.html): entrada directa para Rivadavia.
 - [moreira/index.html](./moreira/index.html): entrada directa para Moreira.
 - [valeria/index.html](./valeria/index.html): entrada directa para Valeria Lotz.
+- [alan_alfonsin/index.html](./alan_alfonsin/index.html): versión de prueba para Alan Alfonsín.
 - [google_apps_script/moreira_mailer/Code.gs](./google_apps_script/moreira_mailer/Code.gs): envio por mail usado por Moreira.
 
 ## Como abrir la app
@@ -78,6 +79,12 @@ Columnas usadas en `Catálogo App`:
 - `Tipo`
 
 La columna opcional `Activo` permite ocultar un producto con los valores `No`, `False` o `0`.
+
+### Alan Alfonsín (prueba)
+
+- usa la pestaña `Catálogo App` de `Alan Odin Led - Catálogo Web`;
+- el pedido abre WhatsApp y también envía una copia por mail al circuito interno;
+- no crea órdenes de Xubio en esta etapa de prueba.
 
 ## Modelo de datos actual de Rivadavia
 
@@ -265,5 +272,6 @@ Con esta estructura se pueden publicar rutas como:
 - `/Pedidos_wpp/rivadavia/`
 - `/Pedidos_wpp/moreira/`
 - `/Pedidos_wpp/valeria/`
+- `/Pedidos_wpp/alan_alfonsin/`
 
 Cada subruta usa la misma logica compartida, pero carga solo la configuracion del cliente correspondiente.
