@@ -148,7 +148,10 @@ window.PEDIDOS_CLIENTS = {
     summaryMode: "value",
     hideEmptySummarySections: true,
     sendMode: "form-post-email",
-    sendXubioOrder: false,
+    sendXubioOrder: true,
+    xubio: {
+      clienteId: 5481712,
+    },
     emailTo: "mymfibrofacil@gmail.com,mymfibrofacil.web@gmail.com",
     emailSubjectPrefix: "Pedido Alan Alfonsín",
     sendEndpoint: "https://script.google.com/macros/s/AKfycbwlEwt2SvBLacxP1hTl8RhjgBOCuo_aebePiPXA8RdcLOpZfgLFaFOTq0GxIjaO-RJxig/exec",
