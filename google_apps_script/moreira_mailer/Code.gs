@@ -56,10 +56,12 @@ function doPost(e) {
     if (!body) {
       return jsonResponse({ ok: false, error: "Falta el cuerpo del pedido." });
     }
+    const customerBody = body;
 
     let presupuesto = { created: false, skipped: true };
     let xubioError = "";
     let printError = "";
+    let copyError = "";
     const routeToFabricaApp = shouldRouteToFabricaApp(payload);
     if ((payload.order_data || payload.orderData) && !routeToFabricaApp) {
       try {
@@ -96,11 +98,21 @@ XUBIO_PRINT_JOB: ${JSON.stringify({ transaccionId: Number(presupuesto.transaccio
       replyTo: String(payload.from || "").trim() || undefined,
     });
 
+    if (!xubioError && presupuesto.transaccionId) {
+      try {
+        enviarCopiaCliente(presupuesto, payload, subject, customerBody);
+      } catch (error) {
+        copyError = error && error.message ? error.message : "Error desconocido al enviar la copia al cliente.";
+        console.error(error && error.stack ? error.stack : copyError);
+      }
+    }
+
     return jsonResponse({
-      ok: !xubioError && !printError,
+      ok: !xubioError && !printError && !copyError,
       routedToFabricaApp: routeToFabricaApp,
       presupuesto,
-      error: xubioError || printError || undefined,
+      copyError: copyError || undefined,
+      error: xubioError || printError || copyError || undefined,
     });
   } catch (error) {
     console.error(error && error.stack ? error.stack : error);

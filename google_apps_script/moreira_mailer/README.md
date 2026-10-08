@@ -1,5 +1,5 @@
 1. Crea un proyecto nuevo de Google Apps Script con la cuenta `mymfibrofacil.web@gmail.com`.
-2. Copia el contenido de `Code.gs` en el editor.
+2. Copia `Code.gs` y `CopiaCliente.gs` como dos archivos separados en el editor.
 3. Configura la zona horaria del proyecto si quieres que la fecha del asunto use tu horario local.
 4. Despliega como `Web app`:
    Ejecutar como: `mymfibrofacil.web@gmail.com`
@@ -28,6 +28,28 @@ Cuando se crea un presupuesto para Moreira, Valeria Lotz, Alan Alfonsín o
 Bongiovanni, Apps Script envía un aviso interno `[IMPRIMIR XUBIO]` a
 `mymfibrofacil@gmail.com`. La tarea independiente de Windows descarga e imprime
 ese presupuesto. Rivadavia queda excluido de la impresión automática.
+
+## Copia del pedido para cada cliente
+
+`CopiaCliente.gs` envía una copia del texto del pedido al correo habitual de
+Moreira, Valeria Lotz, Alan Alfonsín o Bongiovanni después de que se creó su
+presupuesto y se envió el pedido interno. No incluye la etiqueta interna
+`XUBIO_PRINT_JOB` ni el PDF de Xubio. No pide correo en la pantalla ni guarda
+un registro nuevo de las personas que compran.
+
+Los destinatarios fijos se configuran en **Configuración del proyecto →
+Propiedades de la secuencia de comandos**, sin publicarlos en GitHub:
+
+| Cliente | Propiedad |
+| --- | --- |
+| Moreira | `PEDIDOS_COPIA_5481719` |
+| Valeria Lotz | `PEDIDOS_COPIA_5482182` |
+| Alan Alfonsín | `PEDIDOS_COPIA_5481712` |
+| Bongiovanni | `PEDIDOS_COPIA_5482024` |
+
+Para cambiar una casilla de prueba por la definitiva, basta con editar el valor
+de esa propiedad. El identificador del pedido se usa para evitar copias
+duplicadas cuando se repite un envío.
 
 Para Rivadavia, el mismo `doPost` crea dos posibles renglones agrupados por espesor:
 

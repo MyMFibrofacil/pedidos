@@ -25,6 +25,8 @@ test("Bongiovanni crea un presupuesto, envía el correo y evita duplicar el pres
     },
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/Code.gs"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/CopiaCliente.gs"), "utf8"), context);
+  properties.set("PEDIDOS_COPIA_5482024", "bongiovanni@example.com");
   context.getXubioToken = () => "test-token";
   context.xubioFetchJson = (url, token, method, payload) => {
     if (method === "get") {
@@ -58,12 +60,17 @@ test("Bongiovanni crea un presupuesto, envía el correo y evita duplicar el pres
   const printEmail = emails.find((email) => email[1].startsWith("[IMPRIMIR XUBIO]"));
   assert.equal(printEmail[0], "mymfibrofacil@gmail.com");
   assert.match(printEmail[2], /XUBIO_PRINT_JOB:/);
+  const customerCopy = emails.find((email) => email[1].startsWith("Copia de tu pedido -"));
+  assert.equal(customerCopy[0], "bongiovanni@example.com");
+  assert.match(customerCopy[2], /2 tandas de juguetero/);
+  assert.doesNotMatch(customerCopy[2], /XUBIO_PRINT_JOB/);
   assert.equal(context.doPost(request).ok, true);
   assert.equal(budgets.length, 1);
   assert.equal(emails.filter((email) => email[1].startsWith("[IMPRIMIR XUBIO]")).length, 1);
+  assert.equal(emails.filter((email) => email[1].startsWith("Copia de tu pedido -")).length, 1);
 });
 
-test("Moreira, Valeria y Alan avisan para imprimir; Rivadavia queda excluido", () => {
+test("Moreira, Valeria y Alan imprimen y reciben copia; Rivadavia queda excluido", () => {
   for (const [key, clientId, subject] of [
     ["moreira", 5481719, "Moreira - prueba simulada"],
     ["valeria", 5482182, "Valeria Lotz - prueba simulada"],
@@ -89,6 +96,8 @@ test("Moreira, Valeria y Alan avisan para imprimir; Rivadavia queda excluido", (
       },
     });
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/Code.gs"), "utf8"), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/CopiaCliente.gs"), "utf8"), context);
+    if (key !== "rivadavia") properties.set(`PEDIDOS_COPIA_${clientId}`, `${key}@example.com`);
     context.getXubioToken = () => "test-token";
     context.xubioFetchJson = (url, token, method, payload) => {
       if (method === "get") {
@@ -109,15 +118,19 @@ test("Moreira, Valeria y Alan avisan para imprimir; Rivadavia queda excluido", (
     } });
     assert.equal(response.ok, true);
     const notices = emails.filter((email) => email[1].startsWith("[IMPRIMIR XUBIO]"));
+    const copies = emails.filter((email) => email[1].startsWith("Copia de tu pedido -"));
     if (key === "rivadavia") {
       assert.equal(budgets.length, 0);
       assert.equal(notices.length, 0);
+      assert.equal(copies.length, 0);
     } else {
       assert.equal(budgets.length, 1);
       assert.equal(budgets[0].cliente.ID, clientId);
       assert.equal(notices.length, 1);
       assert.equal(notices[0][0], "mymfibrofacil@gmail.com");
       assert.match(notices[0][2], new RegExp(`"clientKey":"${clientId}"`));
+      assert.equal(copies.length, 1);
+      assert.equal(copies[0][0], `${key}@example.com`);
     }
   }
 });
