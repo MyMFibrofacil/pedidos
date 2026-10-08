@@ -64,7 +64,7 @@ Las pantallas usan estos enlaces:
 - `src/ui/create-screen-feedback.js` administra mensajes, diálogos y ayudas de desplazamiento.
 - `src/controller/create-app-controller.js` coordina el estado y los módulos de la pantalla.
 - `src/bootstrap/start-app.js` crea contexto, estado y pantalla para el cliente activo.
-- `google_apps_script/pedidos/` contiene el código fuente que se publica manualmente en Apps Script.
+- `google_apps_script/pedidos/` contiene el endpoint coordinador y los módulos separados de validación, Xubio y copia al cliente; los archivos se publican manualmente en Apps Script.
 - `impresion_presupuestos/` consulta avisos internos, descarga el PDF y lo envía a la impresora.
 
 La hoja activa de catálogo es **Lista Precios a Medida**, configurada por su ID en

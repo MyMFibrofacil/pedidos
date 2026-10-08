@@ -5,6 +5,21 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
 
+const appsScriptModules = [
+  "Code.gs",
+  "PedidoValidation.gs",
+  "XubioApi.gs",
+  "XubioPresupuestos.gs",
+  "CopiaCliente.gs",
+];
+
+function loadAppsScriptModules(context) {
+  for (const module of appsScriptModules) {
+    const source = fs.readFileSync(path.join(__dirname, "../google_apps_script/pedidos", module), "utf8");
+    vm.runInContext(source, context);
+  }
+}
+
 test("Bongiovanni crea un presupuesto, envía el correo y evita duplicar el presupuesto", () => {
   const emails = [];
   const budgets = [];
@@ -24,8 +39,7 @@ test("Bongiovanni crea un presupuesto, envía el correo y evita duplicar el pres
       createTextOutput: (text) => ({ setMimeType: () => JSON.parse(text) }),
     },
   });
-  vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/pedidos/Code.gs"), "utf8"), context);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/pedidos/CopiaCliente.gs"), "utf8"), context);
+  loadAppsScriptModules(context);
   properties.set("PEDIDOS_COPIA_5482024", "bongiovanni@example.com");
   context.getXubioToken = () => "test-token";
   context.xubioFetchJson = (url, token, method, payload) => {
@@ -89,8 +103,7 @@ test("La copia llega con el pedido aunque falle la creación del presupuesto", (
       createTextOutput: (text) => ({ setMimeType: () => JSON.parse(text) }),
     },
   });
-  vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/pedidos/Code.gs"), "utf8"), context);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/pedidos/CopiaCliente.gs"), "utf8"), context);
+  loadAppsScriptModules(context);
   context.getXubioToken = () => {
     assert.equal(emails.length, 2, "los correos del pedido deben salir antes de consultar Xubio");
     throw new Error("Xubio no disponible");
@@ -142,8 +155,7 @@ test("Moreira, Valeria y Alan imprimen y reciben copia; Rivadavia queda excluido
         createTextOutput: (text) => ({ setMimeType: () => JSON.parse(text) }),
       },
     });
-    vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/pedidos/Code.gs"), "utf8"), context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/pedidos/CopiaCliente.gs"), "utf8"), context);
+    loadAppsScriptModules(context);
     if (key !== "rivadavia") properties.set(`PEDIDOS_COPIA_${clientId}`, `${key}@example.com`);
     context.getXubioToken = () => "test-token";
     context.xubioFetchJson = (url, token, method, payload) => {

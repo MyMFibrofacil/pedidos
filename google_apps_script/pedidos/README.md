@@ -1,5 +1,7 @@
 1. Crea un proyecto nuevo de Google Apps Script con la cuenta `mymfibrofacil.web@gmail.com`.
-2. Copia `Code.gs` y `CopiaCliente.gs` como dos archivos separados en el editor.
+2. Copia estos cinco archivos como archivos de secuencia de comandos separados:
+   `Code.gs`, `PedidoValidation.gs`, `XubioApi.gs`, `XubioPresupuestos.gs` y
+   `CopiaCliente.gs`.
 3. Configura la zona horaria del proyecto si quieres que la fecha del asunto use tu horario local.
 4. Despliega como `Web app`:
    Ejecutar como: `mymfibrofacil.web@gmail.com`
@@ -12,6 +14,11 @@ El remitente real será la cuenta dueña del Apps Script que haga el despliegue 
 El remitente esperado del despliegue es `mymfibrofacil.web@gmail.com`.
 Los destinatarios por defecto son `mymfibrofacil@gmail.com` y `mymfibrofacil.web@gmail.com`.
 El frontend envia el pedido con un `form POST`, similar al esquema usado en `Sistema Dojo/formulario_datos`.
+
+`Code.gs` recibe el pedido y coordina correo, presupuesto y aviso de impresión.
+`PedidoValidation.gs` valida sus renglones; `XubioApi.gs` administra las
+llamadas a la API y `XubioPresupuestos.gs` arma y crea el presupuesto.
+`CopiaCliente.gs` envía el comprobante por correo al cliente.
 
 ## Presupuestos automáticos en Xubio
 
