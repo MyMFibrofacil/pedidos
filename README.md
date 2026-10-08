@@ -15,7 +15,8 @@ Pedidos_medida/
 ├── controller.js                 Compatibilidad con páginas antiguas en caché
 ├── src/
 │   ├── bootstrap/                 Inicio común de la aplicación
-│   ├── catalogs/                  Adaptadores y carga de catálogos
+│   ├── catalogs/                  Carga común y adaptadores de hojas
+│   │   └── adapters/              Formatos particulares por esquema de catálogo
 │   ├── config/                    Detección y configuración activa
 │   ├── controller/                Coordinación de la pantalla
 │   ├── data/                      Lectura de Google Sheets
@@ -47,7 +48,9 @@ Las pantallas usan estos enlaces:
 
 - `clients.js` define hojas, identificadores, textos y modo de envío de cada cliente.
 - `src/data/google-sheets.js` obtiene datos de la pestaña configurada.
-- `src/catalogs/create-catalog-loader.js` convierte las hojas de cada cliente al modelo común; los adaptadores manejan formatos particulares.
+- `src/catalogs/create-catalog-loader.js` carga el catálogo y aplica el formato común de placas.
+- `src/catalogs/adapters/` convierte los formatos de Moreira y las listas categorizadas; Bongiovanni tiene su adaptador propio en `src/catalogs/bongiovanni.js`.
+- `src/catalogs/family-metrics.js` interpreta variantes de placa y calcula sus cantidades.
 - `src/order/` calcula el resumen y prepara el mensaje, el envío y las unidades que recibe Xubio.
 - `src/state/create-quantity-manager.js` administra las cantidades de familias, variantes, productos y materiales.
 - `src/state/create-letters-manager.js` administra filtros, cantidades y totales de caracteres.

@@ -24,6 +24,10 @@
     ["createXubioOrderData", "src/order/xubio-order.js"],
     ["createOrderSender", "src/order/send-order.js"],
     ["groupProductsBy", "src/utils/catalog-groups.js"],
+    ["", "src/catalogs/adapters/moreira_categories.js"],
+    ["", "src/catalogs/adapters/moreira_shared_price_list.js"],
+    ["", "src/catalogs/adapters/categorized_price_list.js"],
+    ["createFamilyMetrics", "src/catalogs/family-metrics.js"],
     ["createCatalogLoader", "src/catalogs/create-catalog-loader.js"],
     ["createCatalogNavigationRenderer", "src/ui/catalog-navigation-renderer.js"],
     ["createLettersRenderer", "src/ui/letters-section-renderer.js"],
@@ -41,7 +45,7 @@
     ["startApp", "src/bootstrap/start-app.js"],
   ];
   modules.forEach(([name, path]) => {
-    if (!window.PedidosApp?.[name]) {
+    if (!name || !window.PedidosApp?.[name]) {
       document.write(`<script src="${new URL(path, base).href}"><\/script>`);
     }
   });
