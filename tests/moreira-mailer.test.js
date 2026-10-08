@@ -91,7 +91,10 @@ test("La copia llega con el pedido aunque falle la creación del presupuesto", (
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/Code.gs"), "utf8"), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/CopiaCliente.gs"), "utf8"), context);
-  context.getXubioToken = () => { throw new Error("Xubio no disponible"); };
+  context.getXubioToken = () => {
+    assert.equal(emails.length, 2, "los correos del pedido deben salir antes de consultar Xubio");
+    throw new Error("Xubio no disponible");
+  };
   const request = { parameter: {
     client_key: "moreira",
     to: "mymfibrofacil.web@gmail.com",
@@ -104,11 +107,12 @@ test("La copia llega con el pedido aunque falle la creación del presupuesto", (
   const response = context.doPost(request);
   assert.equal(response.ok, false);
   assert.match(response.error, /Xubio no disponible/);
-  assert.equal(emails.length, 2);
+  assert.equal(emails.length, 3);
   assert.equal(emails[0][0], "mymfibrofacil.web@gmail.com");
   assert.equal(emails[1][0], "moreira@example.com");
   assert.match(emails[1][2], /Detalle del pedido de Moreira/);
   assert.doesNotMatch(emails[1][2], /Xubio no disponible/);
+  assert.match(emails[2][1], /^\[REVISAR XUBIO\]/);
   context.doPost(request);
   assert.equal(emails.filter((email) => email[0] === "moreira@example.com").length, 1);
 });

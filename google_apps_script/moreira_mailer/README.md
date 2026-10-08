@@ -38,6 +38,10 @@ presupuesto. No incluye la etiqueta interna
 `XUBIO_PRINT_JOB` ni el PDF de Xubio. No pide correo en la pantalla ni guarda
 un registro nuevo de las personas que compran.
 
+Los dos correos del pedido se envían antes de llamar a Xubio. Si falla la
+creación del presupuesto o la orden de impresión, llega además un correo
+interno con el aviso de revisión.
+
 Los destinatarios fijos se configuran en **Configuración del proyecto →
 Propiedades de la secuencia de comandos**, sin publicarlos en GitHub:
 

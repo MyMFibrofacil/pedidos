@@ -57,11 +57,24 @@ function doPost(e) {
       return jsonResponse({ ok: false, error: "Falta el cuerpo del pedido." });
     }
     const customerBody = body;
+    GmailApp.sendEmail(to, subject, customerBody, {
+      name: "Pedidos a medida",
+      replyTo: String(payload.from || "").trim() || undefined,
+    });
+
+    let copyError = "";
+    if (payload.order_data || payload.orderData) {
+      try {
+        enviarCopiaCliente(payload, subject, customerBody);
+      } catch (error) {
+        copyError = error && error.message ? error.message : "Error desconocido al enviar la copia al cliente.";
+        console.error(error && error.stack ? error.stack : copyError);
+      }
+    }
 
     let presupuesto = { created: false, skipped: true };
     let xubioError = "";
     let printError = "";
-    let copyError = "";
     const routeToFabricaApp = shouldRouteToFabricaApp(payload);
     if ((payload.order_data || payload.orderData) && !routeToFabricaApp) {
       try {
@@ -77,34 +90,18 @@ function doPost(e) {
         if (PRINTABLE_XUBIO_CLIENT_IDS.includes(Number(presupuesto.clientKey))) {
           enviarOrdenImpresionXubio(presupuesto, subject);
         }
-        body += `
-
-XUBIO_PRINT_JOB: ${JSON.stringify({ transaccionId: Number(presupuesto.transaccionId), orderId: String(presupuesto.orderId || ""), clientKey: String(presupuesto.clientKey || "") })}`;
       } catch (error) {
         printError = error && error.message ? error.message : "Error desconocido al enviar la orden de impresion.";
         console.error(error && error.stack ? error.stack : printError);
       }
     }
 
-    const reviewPrefix = xubioError ? "[REVISAR XUBIO] " : printError ? "[REVISAR IMPRESION] " : "";
-    const emailSubject = `${reviewPrefix}${subject}`;
     const notes = [];
     if (xubioError) notes.push(`No se pudo crear el presupuesto automatico en Xubio.\nError: ${xubioError}`);
     if (printError) notes.push(`El presupuesto se creo, pero no se pudo enviar la orden de impresion.\nError: ${printError}`);
-    const emailBody = notes.length ? `${body}\n\n---\n${notes.join("\n\n")}` : body;
-
-    GmailApp.sendEmail(to, emailSubject, emailBody, {
-      name: "Pedidos a medida",
-      replyTo: String(payload.from || "").trim() || undefined,
-    });
-
-    if (payload.order_data || payload.orderData) {
-      try {
-        enviarCopiaCliente(payload, subject, customerBody);
-      } catch (error) {
-        copyError = error && error.message ? error.message : "Error desconocido al enviar la copia al cliente.";
-        console.error(error && error.stack ? error.stack : copyError);
-      }
+    if (notes.length) {
+      GmailApp.sendEmail(to, `${xubioError ? "[REVISAR XUBIO] " : "[REVISAR IMPRESION] "}${subject}`,
+        `${customerBody}\n\n---\n${notes.join("\n\n")}`, { name: "Pedidos a medida" });
     }
 
     return jsonResponse({
