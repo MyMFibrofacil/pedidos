@@ -1,10 +1,13 @@
-# Impresión independiente de presupuestos Bongiovanni
+# Impresión independiente de presupuestos web
 
 Este proceso se ejecuta mediante la tarea de Windows
-`Pedidos Medida - Imprimir Bongiovanni`, una vez por minuto y con la sesión de
-Windows iniciada. Lee los avisos internos de `mymfibrofacil@gmail.com`, descarga
-el PDF del presupuesto ya creado en Xubio y lo envía a la impresora
+`Pedidos Medida - Imprimir Presupuestos`, una vez por minuto y con la sesión de
+Windows iniciada. Lee los avisos internos de `mymfibrofacil@gmail.com` para
+Bongiovanni, Moreira, Valeria Lotz y Alan Alfonsín. Descarga el PDF del
+presupuesto ya creado en Xubio y lo envía a la impresora
 predeterminada `Impresora Pablo Nico`. No requiere ejecutar FabricaApp.
+Rivadavia no genera avisos de impresión y su identificador está excluido del
+lector local.
 
 El código está separado por responsabilidad: `mailbox.py` lee y confirma los
 avisos, `xubio.py` descarga el PDF, `printer.py` lo envía a Windows,

@@ -45,11 +45,13 @@ La habilitación del cliente también debe estar presente en el despliegue de
 
 Apps Script envía una orden interna `[IMPRIMIR XUBIO]` a
 `mymfibrofacil@gmail.com`, manteniendo el pedido en `mymfibrofacil.web@gmail.com`.
-La tarea independiente de Windows `Pedidos Medida - Imprimir Bongiovanni`
+La tarea independiente de Windows `Pedidos Medida - Imprimir Presupuestos`
 ejecuta `impresion_presupuestos` cada minuto. Descarga el PDF del presupuesto
 existente y lo envía a `Impresora Pablo Nico`, que debe ser la impresora
 predeterminada. La computadora debe estar encendida y con la sesión de Windows
-iniciada; FabricaApp puede permanecer cerrado.
+iniciada; FabricaApp puede permanecer cerrado. La misma tarea imprime también
+los presupuestos de Moreira, Valeria Lotz y Alan Alfonsín; Rivadavia está
+excluido.
 
 Las credenciales se guardan cifradas para el usuario de Windows en
 `%LOCALAPPDATA%\PedidosMedida\impresion_presupuestos`. El archivo de registro

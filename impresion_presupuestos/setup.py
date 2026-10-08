@@ -11,7 +11,7 @@ from .config import Settings, save_settings
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Configurar la impresión independiente de Bongiovanni")
+    parser = argparse.ArgumentParser(description="Configurar la impresión independiente de presupuestos web")
     parser.add_argument("--from-env", type=Path, required=True, help="Archivo .env actual con credenciales IMAP y Xubio")
     args = parser.parse_args()
     if not args.from_env.is_file():

@@ -1,4 +1,4 @@
-"""Punto de entrada de la tarea independiente de impresión de Bongiovanni."""
+"""Punto de entrada de la tarea independiente de impresión web."""
 
 from __future__ import annotations
 
@@ -35,15 +35,20 @@ def run(*, check_only: bool = False) -> int:
             try:
                 job = read_job(mailbox, uid)
                 order_id = str(job["orderId"])
+                client_id = str(job["clientId"])
                 transaccion_id = int(job["transaccionId"])
-                if order_id not in processed:
+                state_key = f"{client_id}:{order_id}"
+                recorded_id = processed.get(state_key)
+                if recorded_id is None and client_id == "5482024":
+                    recorded_id = processed.get(order_id)
+                if recorded_id is None:
                     token = token or get_token(settings)
                     pdf = download_budget_pdf(token, transaccion_id)
                     submit_pdf(settings, transaccion_id, pdf)
-                    processed[order_id] = transaccion_id
+                    processed[state_key] = transaccion_id
                     save_processed(processed)
-                    LOGGER.info("Presupuesto enviado a impresión: transaccion=%s pedido=%s", transaccion_id, order_id)
-                elif processed[order_id] != transaccion_id:
+                    LOGGER.info("Presupuesto enviado a impresión: cliente=%s transaccion=%s pedido=%s", client_id, transaccion_id, order_id)
+                elif recorded_id != transaccion_id:
                     raise RuntimeError("El pedido ya figura impreso con otra transacción de Xubio.")
                 mark_seen(mailbox, uid)
             except Exception:
@@ -53,7 +58,7 @@ def run(*, check_only: bool = False) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Imprimir presupuestos Bongiovanni sin FabricaApp")
+    parser = argparse.ArgumentParser(description="Imprimir presupuestos web sin FabricaApp")
     parser.add_argument("--check", action="store_true", help="Verificar conexiones sin imprimir ni modificar correos")
     args = parser.parse_args()
     DATA_DIR.mkdir(parents=True, exist_ok=True)

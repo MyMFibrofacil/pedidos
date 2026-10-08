@@ -1,1 +1,1 @@
-"""Impresión local independiente de presupuestos web de Bongiovanni."""
+"""Impresión local independiente de presupuestos web de cuatro clientes."""

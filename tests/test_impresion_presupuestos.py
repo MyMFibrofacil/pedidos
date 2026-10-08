@@ -10,9 +10,9 @@ from unittest.mock import MagicMock, patch
 from impresion_presupuestos import mailbox as mail, main as worker
 
 
-def make_notice(client_key: str = "5482024") -> bytes:
+def make_notice(client_key: str = "5482024", customer: str = "Bongiovanni") -> bytes:
     message = EmailMessage()
-    message["Subject"] = "[IMPRIMIR XUBIO] Bongiovanni - 08/10/2026"
+    message["Subject"] = f"[IMPRIMIR XUBIO] {customer} - 08/10/2026"
     message.set_content(
         'Orden interna\nXUBIO_PRINT_JOB: '
         f'{{"transaccionId":123,"orderId":"pedido-1","clientKey":"{client_key}"}}'
@@ -21,12 +21,20 @@ def make_notice(client_key: str = "5482024") -> bytes:
 
 
 class PrintFlowTests(unittest.TestCase):
-    def test_solo_acepta_bongiovanni(self):
+    def test_acepta_cuatro_clientes_y_rechaza_rivadavia(self):
         inbox = MagicMock()
-        inbox.uid.return_value = ("OK", [(b"1 (BODY[] {100}", make_notice())])
-        self.assertEqual(mail.read_job(inbox, b"1")["transaccionId"], 123)
-        inbox.uid.assert_called_with("fetch", b"1", "(BODY.PEEK[])")
-        inbox.uid.return_value = ("OK", [(b"1 (BODY[] {100}", make_notice("7756831"))])
+        for client_id, customer in (
+            ("5482024", "Bongiovanni"),
+            ("5481719", "Moreira"),
+            ("5482182", "Valeria Lotz"),
+            ("5481712", "Pedido Alan Alfonsín"),
+        ):
+            inbox.uid.return_value = ("OK", [(b"1 (BODY[] {100}", make_notice(client_id, customer))])
+            job = mail.read_job(inbox, b"1")
+            self.assertEqual(job["transaccionId"], 123)
+            self.assertEqual(job["clientId"], client_id)
+            inbox.uid.assert_called_with("fetch", b"1", "(BODY.PEEK[])")
+        inbox.uid.return_value = ("OK", [(b"1 (BODY[] {100}", make_notice("7756831", "Rivadavia"))])
         with self.assertRaises(RuntimeError):
             mail.read_job(inbox, b"1")
 
@@ -42,7 +50,7 @@ class PrintFlowTests(unittest.TestCase):
              patch.object(worker, "check_printer"), \
              patch.object(worker, "open_mailbox", opened), \
              patch.object(worker, "pending_ids", return_value=[b"1"]), \
-             patch.object(worker, "read_job", return_value={"transaccionId": 123, "orderId": "pedido-1"}), \
+             patch.object(worker, "read_job", return_value={"transaccionId": 123, "orderId": "pedido-1", "clientId": "5481719"}), \
              patch.object(worker, "load_processed", return_value={}), \
              patch.object(worker, "get_token", return_value="token"), \
              patch.object(worker, "download_budget_pdf", return_value=b"%PDF-1"), \
@@ -63,7 +71,7 @@ class PrintFlowTests(unittest.TestCase):
              patch.object(worker, "check_printer"), \
              patch.object(worker, "open_mailbox", opened), \
              patch.object(worker, "pending_ids", return_value=[b"1"]), \
-             patch.object(worker, "read_job", return_value={"transaccionId": 123, "orderId": "pedido-1"}), \
+             patch.object(worker, "read_job", return_value={"transaccionId": 123, "orderId": "pedido-1", "clientId": "5482182"}), \
              patch.object(worker, "load_processed", return_value={}), \
              patch.object(worker, "get_token", return_value="token"), \
              patch.object(worker, "download_budget_pdf", side_effect=RuntimeError("sin PDF")), \

@@ -1,4 +1,4 @@
-"""Lee avisos de Bongiovanni y confirma los ya enviados a impresión."""
+"""Lee avisos de los clientes autorizados y confirma los ya impresos."""
 
 from __future__ import annotations
 
@@ -14,7 +14,13 @@ from .config import Settings
 
 
 PRINT_JOB_PATTERN = re.compile(r"^XUBIO_PRINT_JOB:\s*(\{.+\})\s*$", re.MULTILINE)
-SEARCH_QUERY = '(UNSEEN SUBJECT "IMPRIMIR XUBIO" SUBJECT "Bongiovanni")'
+SEARCH_QUERY = '(UNSEEN SUBJECT "IMPRIMIR XUBIO")'
+CLIENT_SUBJECTS = {
+    "5481719": "MOREIRA",
+    "5482182": "VALERIA LOTZ",
+    "5481712": "ALAN ALFONSÍN",
+    "5482024": "BONGIOVANNI",
+}
 
 
 @contextmanager
@@ -42,14 +48,14 @@ def pending_ids(mailbox: imaplib.IMAP4_SSL) -> list[bytes]:
 
 
 def read_job(mailbox: imaplib.IMAP4_SSL, uid: bytes) -> dict[str, str | int]:
-    """Acepta únicamente el aviso interno del cliente Bongiovanni."""
+    """Valida la transacción y el cliente indicado en el aviso interno."""
     status, data = mailbox.uid("fetch", uid, "(BODY.PEEK[])")
     if status != "OK" or not data or not isinstance(data[0], tuple):
         raise RuntimeError(f"No se pudo leer el aviso de impresión {uid.decode()}.")
     message: Message = email.message_from_bytes(data[0][1])
     subject = str(email.header.make_header(email.header.decode_header(message.get("Subject", ""))))
-    if "IMPRIMIR XUBIO" not in subject.upper() or "BONGIOVANNI" not in subject.upper():
-        raise RuntimeError("El asunto no corresponde a una orden de Bongiovanni.")
+    if "IMPRIMIR XUBIO" not in subject.upper():
+        raise RuntimeError("El asunto no corresponde a una orden de impresión.")
     body_parts = []
     for part in message.walk():
         if part.get_content_type() == "text/plain" and part.get_content_disposition() != "attachment":
@@ -64,9 +70,10 @@ def read_job(mailbox: imaplib.IMAP4_SSL, uid: bytes) -> dict[str, str | int]:
         client_key = str(payload["clientKey"]).strip()
     except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
         raise RuntimeError("El aviso contiene datos de impresión inválidos.") from exc
-    if transaccion_id <= 0 or not order_id or client_key != "5482024":
-        raise RuntimeError("La orden de impresión no corresponde a Bongiovanni.")
-    return {"transaccionId": transaccion_id, "orderId": order_id}
+    client_subject = CLIENT_SUBJECTS.get(client_key)
+    if transaccion_id <= 0 or not order_id or not client_subject or client_subject not in subject.upper():
+        raise RuntimeError("La orden de impresión no corresponde a un cliente habilitado.")
+    return {"transaccionId": transaccion_id, "orderId": order_id, "clientId": client_key}
 
 
 def mark_seen(mailbox: imaplib.IMAP4_SSL, uid: bytes) -> None:
