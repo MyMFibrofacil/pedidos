@@ -10,8 +10,6 @@ function createAppController({
   summaryMode,
   thicknessMeta,
 }) {
-const LETTER_VOWELS = new Set(["A", "E", "I", "O", "U"]);
-const SCROLL_BUTTON_IDLE_MS = 1400;
 const textCollator = new Intl.Collator("es", { sensitivity: "base", numeric: true });
 
 let {
@@ -19,11 +17,8 @@ let {
   catalog,
   emailSubmissionPending,
   pendingEmailStatusMessage,
-  scrollButtonTimer,
   searchTerm,
-  statusTimer,
   summaryOpen,
-  toastTimer,
 } = state;
 
 const quantityManager = window.PedidosApp.createQuantityManager({
@@ -146,156 +141,24 @@ function normalizePrice(value) {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
-function applyClientUi() {
-  if (!clientConfig) return;
-
-  const ui = clientConfig.ui || {};
-  document.title = ui.title || `Pedidos ${clientConfig.name || ""}`.trim() || "Pedidos";
-
-  if (html.search && ui.searchPlaceholder) {
-    html.search.placeholder = ui.searchPlaceholder;
-  }
-
-  if (html.summaryTitle && ui.detailTitle) {
-    html.summaryTitle.textContent = ui.detailTitle;
-  }
-
-  if (html.sendButtonLabel && ui.sendButtonLabel) {
-    html.sendButtonLabel.textContent = ui.sendButtonLabel;
-  }
-
-  if (html.logo && clientConfig.logoPath) {
-    html.logo.src = `${assetPrefix}${clientConfig.logoPath}`;
-  }
-}
-
+const screenFeedback = window.PedidosApp.createScreenFeedback({
+  html,
+  clientConfig,
+  assetPrefix,
+  escapeHtml,
+});
+const {
+  applyClientUi,
+  setFamiliesMessage,
+  openDesignsModal,
+  closeDesignsModal,
+  setStatus,
+  getRemainingScroll,
+  hideScrollButton,
+  showScrollButtonTemporarily,
+} = screenFeedback;
 function updateSearchVisibility() {
-  if (!html.searchWrapper) return;
-  html.searchWrapper.classList.toggle("hidden", isLettersSection(activeThickness));
-}
-
-function setFamiliesMessage(message) {
-  html.families.innerHTML = `<p class="text-sm text-slate-500">${escapeHtml(message)}</p>`;
-}
-
-function openDesignsModal() {
-  if (!html.designsModal) return;
-  html.designsModal.classList.remove("hidden");
-  document.body.classList.add("overflow-hidden");
-}
-
-function closeDesignsModal() {
-  if (!html.designsModal) return;
-  html.designsModal.classList.add("hidden");
-  document.body.classList.remove("overflow-hidden");
-}
-
-function hideToast() {
-  if (!html.toast) return;
-  html.toast.classList.add("opacity-0", "-translate-y-3");
-  html.toast.classList.remove("opacity-100", "translate-y-0");
-  setTimeout(() => {
-    if (!html.toast.classList.contains("opacity-100")) {
-      html.toast.classList.add("hidden");
-    }
-  }, 300);
-}
-
-function showToast(message, tone = "muted") {
-  if (!html.toast || !message || tone === "muted") return;
-  if (toastTimer) clearTimeout(toastTimer);
-
-  html.toast.textContent = message;
-  html.toast.className =
-    "pointer-events-none fixed left-1/2 top-5 z-[90] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl px-4 py-3 text-sm font-bold shadow-xl opacity-0 -translate-y-3 transition-all duration-300";
-
-  if (tone === "success") {
-    html.toast.classList.add(
-      "border",
-      "border-emerald-200",
-      "bg-emerald-50",
-      "text-emerald-700",
-      "shadow-emerald-900/10"
-    );
-  } else if (tone === "error") {
-    html.toast.classList.add(
-      "border",
-      "border-red-200",
-      "bg-red-50",
-      "text-red-700",
-      "shadow-red-900/10"
-    );
-  }
-
-  html.toast.classList.remove("hidden");
-  requestAnimationFrame(() => {
-    html.toast.classList.remove("opacity-0", "-translate-y-3");
-    html.toast.classList.add("opacity-100", "translate-y-0");
-  });
-
-  toastTimer = setTimeout(hideToast, 2600);
-}
-
-function setStatus(message, tone = "muted") {
-  if (!html.status) return;
-  if (statusTimer) clearTimeout(statusTimer);
-
-  html.status.textContent = message || "";
-  html.status.className = "px-2 text-xs min-h-4";
-
-  if (tone === "success") {
-    html.status.classList.add("text-emerald-600");
-  } else if (tone === "error") {
-    html.status.classList.add("text-red-600");
-  } else {
-    html.status.classList.add("text-slate-500");
-  }
-
-  if (!message) {
-    if (toastTimer) clearTimeout(toastTimer);
-    hideToast();
-  } else {
-    showToast(message, tone);
-  }
-
-  if (message) {
-    statusTimer = setTimeout(() => {
-      html.status.textContent = "";
-      html.status.className = "px-2 text-xs text-slate-500 min-h-4";
-    }, 5000);
-  }
-}
-
-function getRemainingScroll() {
-  if (!html.catalogScroll) return 0;
-
-  const containerIsScrollable = html.catalogScroll.scrollHeight - html.catalogScroll.clientHeight > 1;
-  const remainingContainer =
-    html.catalogScroll.scrollHeight - html.catalogScroll.scrollTop - html.catalogScroll.clientHeight;
-  const remainingWindow =
-    Math.max(
-      document.documentElement.scrollHeight,
-      document.body ? document.body.scrollHeight : 0
-    ) - (window.scrollY + window.innerHeight);
-
-  return containerIsScrollable ? remainingContainer : remainingWindow;
-}
-
-function hideScrollButton() {
-  if (!html.scrollToBottom) return;
-  html.scrollToBottom.classList.add("hidden");
-}
-
-function showScrollButtonTemporarily() {
-  if (!html.scrollToBottom) return;
-  if (getRemainingScroll() < 24) {
-    hideScrollButton();
-    return;
-  }
-
-  html.scrollToBottom.classList.remove("hidden");
-  if (scrollButtonTimer) clearTimeout(scrollButtonTimer);
-  scrollButtonTimer = setTimeout(hideScrollButton, SCROLL_BUTTON_IDLE_MS);
+  screenFeedback.updateSearchVisibility(isLettersSection(activeThickness));
 }
 
 function getActiveThickness() {
@@ -375,10 +238,8 @@ const catalogFamilyRenderer = window.PedidosApp.createCatalogFamilyRenderer({
   getVariantBasePlates,
   getFamilyGroupTotalPlates,
   getSinglePlateReference,
+  groupProductsBy: window.PedidosApp.groupProductsBy,
   getProductDisplayName,
-  filteredProductsForFamily,
-  filteredVariantsForFamily,
-  searchMatchesFamily,
   getRenderState: () => ({ searchTerm, kitGroupOpenState, catalogAdapter }),
 });
 const renderCatalogFamily = catalogFamilyRenderer.renderFamilyCard;
@@ -411,92 +272,28 @@ function parseFamilyPlateVariant(familyName) {
   };
 }
 
-function getLetterTotal(letter) {
-  return lettersConfig.sizes.reduce(
-    (sum, size) => sum + (letterState.quantities[letter]?.[size] || 0),
-    0
-  );
-}
-
-function isNumericLetter(value) {
-  return /^\d+$/.test(String(value || ""));
-}
-
-function getActiveLetterFilter() {
-  return (
-    lettersConfig.filters.find((filter) => filter.id === letterState.filter) ||
-    lettersConfig.filters[0] ||
-    null
-  );
-}
-
-function getActiveLetterFilterMode() {
-  return getActiveLetterFilter()?.mode || getActiveLetterFilter()?.id || "letters";
-}
-
-function getActiveLetterFilterLabel(count) {
-  const mode = getActiveLetterFilterMode();
-  if (mode === "numbers") return count === 1 ? "número" : "números";
-  if (mode === "letters") return count === 1 ? "letra" : "letras";
-  return count === 1 ? "carácter" : "caracteres";
-}
-
-function getFilteredLetters() {
-  return lettersConfig.letters.filter((letter) => {
-    const activeFilterMode = getActiveLetterFilterMode();
-    if (activeFilterMode === "numbers") return isNumericLetter(letter);
-    if (activeFilterMode === "letters") return !isNumericLetter(letter);
-    if (letterState.filter === "vowels") return LETTER_VOWELS.has(letter);
-    if (letterState.filter === "consonants") return !LETTER_VOWELS.has(letter);
-    if (letterState.filter === "loaded") return getLetterTotal(letter) > 0;
-    return true;
-  });
-}
-
-function setLetterQty(letter, size, value) {
-  if (!letterState.quantities[letter]) {
-    letterState.quantities[letter] = {};
-  }
-  letterState.quantities[letter][size] = normalizeQty(value);
-  render();
-}
-
-function updateLetterQty(letter, size, delta) {
-  const current = letterState.quantities[letter]?.[size] || 0;
-  setLetterQty(letter, size, Math.max(0, current + delta));
-}
-
-function clearLoadedLetters() {
-  lettersConfig.letters.forEach((letter) => {
-    if (getLetterTotal(letter) <= 0) return;
-    lettersConfig.sizes.forEach((size) => {
-      letterState.quantities[letter][size] = 0;
-    });
-  });
-  setStatus("Se limpiaron los caracteres cargados.");
-  render();
-}
-
-function clearAllLetters() {
-  lettersConfig.letters.forEach((letter) => {
-    lettersConfig.sizes.forEach((size) => {
-      letterState.quantities[letter][size] = 0;
-    });
-  });
-  setStatus("Se limpiaron todos los caracteres.");
-  render();
-}
+const lettersManager = window.PedidosApp.createLettersManager({
+  lettersConfig,
+  letterState,
+  normalizeQty,
+  onChange: render,
+  setStatus,
+});
+const {
+  getLetterTotal,
+  getActiveLetterFilterLabel,
+  getFilteredLetters,
+  setLetterQty,
+  updateLetterQty,
+  summarizeLettersSection,
+} = lettersManager;
 
 function clearActiveSection() {
   const section = getActiveThickness();
   if (!section) return;
 
   if (isLettersSection(section.id)) {
-    lettersConfig.letters.forEach((letter) => {
-      lettersConfig.sizes.forEach((size) => {
-        letterState.quantities[letter][size] = 0;
-      });
-    });
+    lettersManager.clearAllQuantities();
     setStatus(`Se limpio la categoria ${section.name}.`, "success");
     render();
     return;
@@ -556,11 +353,7 @@ function clearCurrentOrder() {
     delete productQuantities[key];
   });
 
-  lettersConfig.letters.forEach((letter) => {
-    lettersConfig.sizes.forEach((size) => {
-      letterState.quantities[letter][size] = 0;
-    });
-  });
+  lettersManager.clearAllQuantities();
 
   summaryOpen = false;
   currentOrderId = createOrderId();
@@ -571,70 +364,6 @@ function clearCurrentOrder() {
   }
 }
 
-function summarizeLettersSection() {
-  const lines = lettersConfig.letters
-    .map((letter) => {
-      const perSize = lettersConfig.sizes
-        .map((size) => ({
-          size,
-          qty: letterState.quantities[letter]?.[size] || 0,
-          unitPrice: letterState.prices[size] || 0,
-        }))
-        .filter((item) => item.qty > 0);
-
-      if (perSize.length === 0) return null;
-
-      return {
-        letter,
-        perSize,
-        total: perSize.reduce((sum, item) => sum + item.qty, 0),
-        subtotal: perSize.reduce((sum, item) => sum + item.qty * item.unitPrice, 0),
-      };
-    })
-    .filter(Boolean);
-
-  const sizeTotals = Object.fromEntries(
-    lettersConfig.sizes.map((size) => [
-      size,
-      lettersConfig.letters.reduce(
-        (sum, letter) => sum + (letterState.quantities[letter]?.[size] || 0),
-        0
-      ),
-    ])
-  );
-
-  const sizeSubtotals = Object.fromEntries(
-    lettersConfig.sizes.map((size) => [
-      size,
-      (letterState.prices[size] || 0) * (sizeTotals[size] || 0),
-    ])
-  );
-
-  const subtotal = Object.values(sizeSubtotals).reduce((sum, value) => sum + value, 0);
-  const tax = subtotal * lettersConfig.taxRate;
-  const groupedBySize = lettersConfig.sizes
-    .map((size) => ({
-      size,
-      items: lettersConfig.letters
-        .map((letter) => ({
-          letter,
-          qty: letterState.quantities[letter]?.[size] || 0,
-        }))
-        .filter((item) => item.qty > 0),
-    }))
-    .filter((group) => group.items.length > 0);
-
-  return {
-    lines,
-    groupedBySize,
-    sizeTotals,
-    sizeSubtotals,
-    total: Object.values(sizeTotals).reduce((sum, qty) => sum + qty, 0),
-    subtotal,
-    tax,
-    totalWithTax: subtotal + tax,
-  };
-}
 
 function toggleFamily(familyId) {
   const section = getActiveThickness();
@@ -650,403 +379,48 @@ function toggleKitGroup(groupId) {
   renderFamilies();
 }
 
-function renderTabs() {
-  const hideTabs = Boolean(clientConfig?.hideSingleSectionTab && !clientConfig?.categoryHome && getAvailableSections().length <= 1);
-  html.tabs.classList.toggle("hidden", hideTabs);
-  if (hideTabs) {
-    html.tabs.innerHTML = "";
-    return;
-  }
-  const categoryHomeTab = clientConfig?.categoryHome
-    ? `
-        <button
-          data-category-home
-          class="flex flex-col items-center min-w-[88px] justify-center border-b-[3px] ${
-            categoryHomeOpen ? "border-primary text-primary" : "border-transparent text-slate-500"
-          } gap-1 pb-2 pt-3"
-        >
-          <span class="material-symbols-outlined">category</span>
-          <p class="text-xs ${categoryHomeOpen ? "font-bold" : "font-medium"} whitespace-nowrap">Categorías</p>
-        </button>
-      `
-    : "";
-
-  html.tabs.innerHTML = categoryHomeTab + getAvailableSections()
-    .map((section) => {
-      const active = !categoryHomeOpen && section.id === activeThickness;
-      const tabLabel = clientConfig?.sectionLabels?.[section.id] || section.name;
-      return `
-        <button
-          data-thickness="${escapeHtml(section.id)}"
-          class="flex flex-col items-center min-w-[88px] justify-center border-b-[3px] ${
-            active ? "border-primary text-primary" : "border-transparent text-slate-500"
-          } gap-1 pb-2 pt-3"
-        >
-          <span class="material-symbols-outlined">${escapeHtml(section.icon)}</span>
-          <p class="text-xs ${active ? "font-bold" : "font-medium"} whitespace-nowrap">${escapeHtml(tabLabel)}</p>
-        </button>
-      `;
-    })
-    .join("");
-}
-
-function getCatalogCategories() {
-  return catalog.flatMap((section) =>
-    (section.categories || []).map((category) => ({
-      ...category,
-      sectionId: section.id,
-      sectionName: section.name,
-    }))
-  );
-}
-
-function renderCategoryHome() {
-  const categories = getCatalogCategories();
-  if (!categories.length) {
+const catalogNavigationRenderer = window.PedidosApp.createCatalogNavigationRenderer({
+  html,
+  clientConfig,
+  escapeHtml,
+  getAvailableSections,
+  getCatalog: () => catalog,
+  getNavigationState: () => ({ categoryHomeOpen, activeThickness }),
+  onEmptyCategories: () => {
     categoryHomeOpen = false;
     renderFamilies();
-    return;
-  }
-
-  const term = searchTerm.toLowerCase();
-  const filteredCategories = !term
-    ? categories
-    : categories.filter((category) =>
-        category.name.toLowerCase().includes(term) ||
-        category.sectionName.toLowerCase().includes(term) ||
-        category.products.some((product) =>
-          `${product.name} ${product.model || ""}`.toLowerCase().includes(term)
-        )
-      );
-
-  html.families.innerHTML = filteredCategories.length
-    ? `
-      <section class="space-y-3">
-        <div class="px-1">
-          <h1 class="text-lg font-extrabold text-slate-900">Categorías</h1>
-          <p class="mt-1 text-sm text-slate-500">Elegí una categoría para ver sus productos.</p>
-        </div>
-        <div class="space-y-3">
-          ${filteredCategories
-            .map(
-              (category) => `
-                <button
-                  type="button"
-                  data-category-select="${escapeHtml(category.id)}"
-                  data-category-section="${escapeHtml(category.sectionId)}"
-                  class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition active:scale-[0.99]"
-                >
-                  <div class="min-w-0">
-                    <p class="text-sm font-extrabold text-slate-800">${escapeHtml(category.name)}</p>
-                    <p class="mt-1 text-xs text-slate-500">${escapeHtml(category.sectionName)} · ${category.products.length} productos</p>
-                  </div>
-                  <span class="material-symbols-outlined shrink-0 text-primary">chevron_right</span>
-                </button>
-              `
-            )
-            .join("")}
-        </div>
-      </section>
-    `
-    : "";
-  html.empty.classList.toggle("hidden", filteredCategories.length > 0);
+  },
+});
+function renderTabs() {
+  catalogNavigationRenderer.renderTabs();
 }
-
-function searchMatchesFamily(family) {
-  if (!searchTerm) return true;
-  const term = searchTerm.toLowerCase();
-  if (family.name.toLowerCase().includes(term)) return true;
-  if (getFamilyVariants(family).some((variant) => String(variant.plateLabel || "").toLowerCase().includes(term))) {
-    return true;
-  }
-  return getFamilyProducts(family).some((product) => {
-    return (
-      product.name.toLowerCase().includes(term) ||
-      String(product.plateLabel || "").toLowerCase().includes(term) ||
-      String(product.material || "").toLowerCase().includes(term) ||
-      String(product.object || "").toLowerCase().includes(term)
-    );
-  });
-}
-
-function filteredProductsForFamily(family) {
-  const products = getFamilyProducts(family);
-  if (!searchTerm) return products;
-  const term = searchTerm.toLowerCase();
-  return products.filter((product) => {
-    return (
-      family.name.toLowerCase().includes(term) ||
-      product.name.toLowerCase().includes(term) ||
-      String(product.plateLabel || "").toLowerCase().includes(term) ||
-      String(product.material || "").toLowerCase().includes(term) ||
-      String(product.object || "").toLowerCase().includes(term)
-    );
-  });
-}
-
-function filteredVariantsForFamily(family) {
-  const variants = getFamilyVariants(family);
-  if (!searchTerm) return variants;
-
-  const term = searchTerm.toLowerCase();
-  return variants
-    .map((variant) => {
-      const variantMatches = String(variant.plateLabel || "").toLowerCase().includes(term);
-      const products = (variant.products || []).filter((product) => {
-        return (
-          family.name.toLowerCase().includes(term) ||
-          variantMatches ||
-          product.name.toLowerCase().includes(term) ||
-          String(product.material || "").toLowerCase().includes(term) ||
-          String(product.object || "").toLowerCase().includes(term)
-        );
-      });
-
-      if (!variantMatches && !products.length && !family.name.toLowerCase().includes(term)) {
-        return null;
-      }
-
-      return {
-        ...variant,
-        products: products.length > 0 || !searchTerm ? products : variant.products,
-      };
-    })
-    .filter(Boolean);
+function renderCategoryHome() {
+  catalogNavigationRenderer.renderCategoryHome(searchTerm);
 }
 
 
-function renderQuickStepButtons() {
-  if (clientConfig?.hideQuantitySteps) return "";
-  return lettersConfig.quickSteps
-    .map((step) => {
-      const active = step === letterState.step;
-      return `
-        <button
-          type="button"
-          data-letter-step="${escapeHtml(step)}"
-          class="shrink-0 rounded-full px-3 py-2 text-xs font-bold transition ${
-            active ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700"
-          }"
-        >
-          ${escapeHtml(step)} en ${escapeHtml(step)}
-        </button>
-      `;
-    })
-    .join("");
-}
+const lettersRenderer = window.PedidosApp.createLettersRenderer({
+  html,
+  clientConfig,
+  lettersConfig,
+  letterState,
+  escapeHtml,
+  getFilteredLetters,
+  getLetterTotal,
+  getActiveLetterFilterLabel,
+});
+const renderQuickStepButtons = lettersRenderer.renderQuickStepButtons;
+const renderLettersSection = lettersRenderer.renderLettersSection;
 
-function renderLettersSection() {
-  const filteredLetters = getFilteredLetters();
-  const activeFilterLabel = getActiveLetterFilterLabel(filteredLetters.length);
-
-  const steps = renderQuickStepButtons();
-
-  const filters = lettersConfig.filters
-    .map((filter) => {
-      const active = filter.id === letterState.filter;
-      return `
-        <button
-          type="button"
-          data-letter-filter="${escapeHtml(filter.id)}"
-          class="shrink-0 rounded-full px-3 py-2 text-xs font-bold transition ${
-            active ? "bg-primary text-white" : "border border-slate-200 bg-white text-slate-700"
-          }"
-        >
-          ${escapeHtml(filter.label)}
-        </button>
-      `;
-    })
-    .join("");
-
-  const cards =
-    filteredLetters.length > 0
-      ? filteredLetters
-          .map((letter) => {
-            const total = getLetterTotal(letter);
-            return `
-              <article class="rounded-3xl border ${
-                total > 0 ? "border-primary/25 bg-white" : "border-slate-200 bg-white"
-              } p-2 shadow-sm">
-                <div class="mb-2 flex items-start justify-between gap-1">
-                  <h3 class="text-[1.7rem] font-extrabold leading-none text-slate-900">${escapeHtml(letter)}</h3>
-                  <span class="min-w-7 rounded-full px-2 py-0.5 text-center text-[10px] font-extrabold ${
-                    total > 0 ? "bg-primary/10 text-primary" : "bg-slate-100 text-slate-500"
-                  }">${total}</span>
-                </div>
-                <div class="space-y-1.5">
-                  ${lettersConfig.sizes
-                    .map((size) => {
-                      const qty = letterState.quantities[letter]?.[size] || 0;
-                      return `
-                        <div class="rounded-2xl bg-slate-50 px-1 py-1">
-                          <div class="grid grid-cols-[0.9rem_1.5rem_minmax(0,1fr)_1.5rem] items-center gap-0.5">
-                            <span class="text-[9px] font-extrabold text-slate-500">${escapeHtml(size)}</span>
-                            <button
-                              type="button"
-                              data-letter-action="decrease"
-                              data-letter="${escapeHtml(letter)}"
-                              data-letter-size="${escapeHtml(size)}"
-                              class="flex h-6 w-6 items-center justify-center rounded-lg bg-white text-slate-700 shadow-sm active:scale-95"
-                            >
-                              <span class="material-symbols-outlined text-[15px]">remove</span>
-                            </button>
-                            <input
-                              type="number"
-                              min="0"
-                              inputmode="numeric"
-                              value="${qty}"
-                              data-letter-input="${escapeHtml(letter)}"
-                              data-letter-size="${escapeHtml(size)}"
-                              class="h-6 min-w-0 w-full rounded-lg border-0 bg-white px-0 text-center text-[11px] font-extrabold text-slate-900 focus:ring-0"
-                            />
-                            <button
-                              type="button"
-                              data-letter-action="increase"
-                              data-letter="${escapeHtml(letter)}"
-                              data-letter-size="${escapeHtml(size)}"
-                              class="flex h-6 w-6 items-center justify-center rounded-lg ${
-                                qty > 0 ? "bg-primary text-white" : "bg-white text-primary"
-                              } shadow-sm active:scale-95"
-                            >
-                              <span class="material-symbols-outlined text-[15px]">add</span>
-                            </button>
-                          </div>
-                        </div>
-                      `;
-                    })
-                    .join("")}
-                </div>
-              </article>
-            `;
-          })
-          .join("")
-      : `
-        <div class="col-span-full rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-          No hay ${escapeHtml(getActiveLetterFilterLabel(2))} en esta vista.
-        </div>
-      `;
-
-  html.families.innerHTML = `
-    <section class="space-y-3">
-      <div class="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Carga rapida</p>
-            <p class="text-sm font-semibold text-slate-800">${escapeHtml(lettersConfig.materialLabel)}</p>
-          </div>
-          <p class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-            Paso ${escapeHtml(letterState.step)}
-          </p>
-        </div>
-        <div class="flex gap-2 overflow-x-auto scrollbar-hide">${steps}</div>
-        <div class="flex gap-2 overflow-x-auto scrollbar-hide">${filters}</div>
-        <button
-          type="button"
-          data-category-clear="active"
-          class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700"
-        >
-          Limpiar categoria
-        </button>
-      </div>
-      <div class="flex items-center justify-between gap-3 px-1">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Grilla movil</p>
-          <p class="text-xs font-semibold text-slate-700">3 por fila con 22, 27 y 33 mm</p>
-        </div>
-        <p class="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600">
-          ${filteredLetters.length} ${escapeHtml(activeFilterLabel)}
-        </p>
-      </div>
-      <div class="grid grid-cols-3 gap-2">${cards}</div>
-    </section>
-  `;
-
-  html.empty.classList.add("hidden");
-}
-
-function renderPriceListSection(section) {
-  const filteredProducts = section.products.filter((product) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      product.name.toLowerCase().includes(term) ||
-      String(product.material || "").toLowerCase().includes(term)
-    );
-  });
-
-  if (filteredProducts.length === 0) {
-    html.families.innerHTML = "";
-    html.empty.classList.remove("hidden");
-    return;
-  }
-
-  const selectedCategory = activeCategoryId
-    ? (section.categories || []).find((category) => category.id === activeCategoryId)
-    : null;
-  const categories = selectedCategory ? [selectedCategory] : Array.isArray(section.categories) ? section.categories : [];
-  const categoryMarkup = categories.length
-    ? categories
-        .map((category) => {
-          const matchingProducts = category.products.filter((product) => filteredProducts.includes(product));
-          if (!matchingProducts.length) return "";
-          const open = searchTerm || Boolean(kitGroupOpenState[category.id]);
-          return `
-            <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <button
-                type="button"
-                data-kit-group-toggle="${escapeHtml(category.id)}"
-                class="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
-              >
-                <div class="min-w-0">
-                  <p class="text-sm font-extrabold text-slate-800">${escapeHtml(category.name)}</p>
-                  <p class="mt-1 text-xs text-slate-500">${matchingProducts.length} productos</p>
-                </div>
-                <span class="material-symbols-outlined text-slate-500 transition-transform ${open ? "rotate-180" : ""}">expand_more</span>
-              </button>
-              ${
-                open
-                  ? `<div class="divide-y divide-slate-100 border-t border-slate-100">${matchingProducts
-                      .map((product) => renderValueProductRow(product, product.model || ""))
-                      .join("")}</div>`
-                  : ""
-              }
-            </article>
-          `;
-        })
-        .join("")
-    : `<div class="divide-y divide-slate-100 rounded-2xl border border-slate-200 overflow-hidden bg-white">
-        ${filteredProducts.map((product) => renderValueProductRow(product)).join("")}
-      </div>`;
-
-  html.families.innerHTML = `
-    <section class="space-y-3">
-      ${clientConfig?.orderClearOnly ? `<button type="button" data-order-clear class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700">Limpiar pedido</button>` : `<div class="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Categoria</p>
-            <p class="mt-1 text-sm font-semibold text-slate-800">${escapeHtml(selectedCategory?.name || section.name)}</p>
-          </div>
-          ${clientConfig?.hideQuantitySteps ? "" : `<p class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">Paso ${escapeHtml(letterState.step)}</p>`}
-        </div>
-        ${
-          selectedCategory && clientConfig?.categoryHome
-            ? `<button type="button" data-category-home class="flex items-center gap-1 text-sm font-bold text-primary"><span class="material-symbols-outlined text-base">arrow_back</span>Ver todas las categorías</button>`
-            : ""
-        }
-        ${clientConfig?.hideQuantitySteps ? "" : `<div class="flex gap-2 overflow-x-auto scrollbar-hide">${renderQuickStepButtons()}</div>`}
-        <button
-          type="button"
-          data-category-clear="active"
-          class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700"
-        >
-          Limpiar categoria
-        </button>
-      </div>`}
-      <div class="space-y-3">${categoryMarkup}</div>
-    </section>
-  `;
-  html.empty.classList.add("hidden");
-}
+const renderPriceListSection = window.PedidosApp.createPriceListRenderer({
+  html,
+  clientConfig,
+  letterState,
+  escapeHtml,
+  renderValueProductRow,
+  renderQuickStepButtons,
+  getRenderState: () => ({ searchTerm, activeCategoryId, kitGroupOpenState }),
+});
 
 function renderFamilies() {
   if (categoryHomeOpen) {
@@ -1179,893 +553,99 @@ function buildXubioOrderData() {
   });
 }
 
-async function copyText(text) {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch (_error) {
-    // Fallback below.
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  textarea.select();
-  textarea.setSelectionRange(0, textarea.value.length);
-
-  let copied = false;
-  try {
-    copied = document.execCommand("copy");
-  } catch (_error) {
-    copied = false;
-  }
-
-  document.body.removeChild(textarea);
-  return copied;
-}
-
-function getSendMode() {
-  if (clientConfig?.sendMode === "form-post-email") return "form-post-email";
-  if (clientConfig?.sendMode === "direct-email") return "direct-email";
-  if (clientConfig?.sendMode === "email") return "email";
-  return "whatsapp";
-}
-
-function getOrderDateLabel() {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date());
-}
-
-function getEmailSubject() {
-  const explicitSubject = String(clientConfig?.emailSubject || "").trim();
-  if (explicitSubject) return explicitSubject;
-
-  const subjectPrefix = String(clientConfig?.emailSubjectPrefix || `Pedido ${clientConfig?.name || ""}`.trim() || "Pedido");
-  return `${subjectPrefix} - ${getOrderDateLabel()}`;
-}
-
-function buildEmailLink(text) {
-  const recipient = String(clientConfig?.emailTo || "").trim();
-  const params = new URLSearchParams({
-    subject: getEmailSubject(),
-    body: text,
-  });
-  return `mailto:${recipient}?${params.toString()}`;
-}
-
-async function sendDirectEmail(text) {
-  const endpoint = String(clientConfig?.sendEndpoint || "").trim();
-  if (!endpoint) {
-    throw new Error("Falta configurar el endpoint de envio de mail.");
-  }
-
-  const payload = JSON.stringify({
-    from: "mymfibrofacil.web@gmail.com",
-    to: String(clientConfig?.emailTo || "").trim(),
-    subject: getEmailSubject(),
-    body: text,
-    clientKey,
-    clientName: clientConfig?.name || "",
-    createdAt: new Date().toISOString(),
-  });
-
-  if (navigator.sendBeacon) {
-    const queued = navigator.sendBeacon(
-      endpoint,
-      new Blob([payload], { type: "text/plain;charset=UTF-8" })
-    );
-    if (queued) return;
-  }
-
-  await fetch(endpoint, {
-    method: "POST",
-    mode: "no-cors",
-    headers: {
-      "Content-Type": "text/plain;charset=UTF-8",
-    },
-    body: payload,
-    keepalive: true,
-  });
-}
-
-function submitEmailForm(text) {
-  if (!html.emailForm) {
-    throw new Error("No se encontro el formulario de envio.");
-  }
-
-  const endpoint = String(clientConfig?.sendEndpoint || "").trim();
-  if (!endpoint) {
-    throw new Error("Falta configurar el endpoint de envio de mail.");
-  }
-
-  html.emailForm.action = endpoint;
-
-  const assignValue = (name, value) => {
-    const field = html.emailForm.elements.namedItem(name);
-    if (!field) return;
-    field.value = value;
-  };
-
-  assignValue("from", "mymfibrofacil.web@gmail.com");
-  assignValue("to", String(clientConfig?.emailTo || "").trim());
-  assignValue("subject", getEmailSubject());
-  assignValue("body", text);
-  assignValue("client_key", clientKey);
-  assignValue("client_name", clientConfig?.name || "");
-  assignValue("created_at", new Date().toISOString());
-  if (clientConfig?.sendXubioOrder !== false) {
-    assignValue("order_data", JSON.stringify(buildXubioOrderData()));
-  }
-
-  html.emailForm.submit();
-}
-
-async function sendOrder() {
-  const text = buildWhatsAppText();
-  const copied = await copyText(text);
-  const sendMode = getSendMode();
-
-  if (sendMode === "form-post-email") {
-    try {
-      emailSubmissionPending = true;
-      pendingEmailStatusMessage = copied
-        ? "Pedido enviado por mail y copiado al portapapeles."
-        : "Pedido enviado por mail.";
-      setStatus("Enviando pedido por mail...");
-      submitEmailForm(text);
-    } catch (error) {
-      emailSubmissionPending = false;
-      pendingEmailStatusMessage = "";
-      const detail = error instanceof Error ? error.message : "No se pudo enviar el pedido por mail.";
-      setStatus(detail, "error");
-    }
-    return;
-  }
-
-  if (sendMode === "direct-email") {
-    try {
-      await sendDirectEmail(text);
-      setStatus(
-        copied
-          ? "Pedido enviado por mail y copiado al portapapeles."
-          : "Pedido enviado por mail.",
-        "success"
-      );
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : "No se pudo enviar el pedido por mail.";
-      setStatus(detail, "error");
-    }
-    return;
-  }
-
-  if (sendMode === "email") {
-    window.location.href = buildEmailLink(text);
-
-    if (copied) {
-      setStatus("Pedido copiado. Se abrio tu correo con el pedido precargado.", "success");
-    } else {
-      setStatus("Se abrio tu correo. Si no aparece el texto, copialo desde el resumen.", "error");
-    }
-    return;
-  }
-
-  const encodedText = encodeURIComponent(text);
-  const deepLink = `whatsapp://send?text=${encodedText}`;
-  const webLink = `https://api.whatsapp.com/send?text=${encodedText}`;
-
-  window.open(deepLink, "_blank");
-  setTimeout(() => {
-    window.open(webLink, "_blank");
-  }, 400);
-
-  if (copied) {
-    setStatus("Pedido copiado. Elegi el grupo en WhatsApp y envia el mensaje.", "success");
-  } else {
-    setStatus("WhatsApp se abrio con el pedido. Si no aparece el texto, copialo desde el resumen.", "error");
-  }
-}
+const orderSender = window.PedidosApp.createOrderSender({
+  clientConfig,
+  clientKey,
+  html,
+  buildMessage: buildWhatsAppText,
+  buildOrderData: buildXubioOrderData,
+  setStatus,
+  onEmailSubmissionState: (pending, message) => {
+    emailSubmissionPending = pending;
+    pendingEmailStatusMessage = message;
+  },
+});
+const { sendOrder, submitEmailForm } = orderSender;
 
 function bindEvents() {
-  html.tabs.addEventListener("click", (event) => {
-    const categoryHomeButton = event.target.closest("[data-category-home]");
-    if (categoryHomeButton) {
-      categoryHomeOpen = true;
-      activeCategoryId = "";
-      render();
-      return;
-    }
-    const button = event.target.closest("[data-thickness]");
-    if (!button) return;
-    activeThickness = button.dataset.thickness;
-    categoryHomeOpen = false;
-    activeCategoryId = "";
-    render();
-  });
-
-  html.families.addEventListener("click", (event) => {
-    if (event.target.closest("[data-order-clear]")) {
-      clearCurrentOrder();
-      setStatus("Se limpió el pedido.", "success");
-      return;
-    }
-    const categoryHomeButton = event.target.closest("[data-category-home]");
-    if (categoryHomeButton) {
-      categoryHomeOpen = true;
-      activeCategoryId = "";
-      render();
-      return;
-    }
-
-    const categoryButton = event.target.closest("[data-category-select][data-category-section]");
-    if (categoryButton) {
-      activeThickness = categoryButton.dataset.categorySection;
-      activeCategoryId = categoryButton.dataset.categorySelect;
-      categoryHomeOpen = false;
-      if (html.catalogScroll) html.catalogScroll.scrollTo({ top: 0, behavior: "smooth" });
-      render();
-      return;
-    }
-
-    const toggleButton = event.target.closest("[data-family]");
-    if (toggleButton) {
-      toggleFamily(toggleButton.dataset.family);
-      return;
-    }
-
-    const kitGroupButton = event.target.closest("[data-kit-group-toggle]");
-    if (kitGroupButton) {
-      toggleKitGroup(kitGroupButton.dataset.kitGroupToggle);
-      return;
-    }
-
-    const familyQtyButton = event.target.closest("[data-family-action][data-family-qty]");
-    if (familyQtyButton) {
-      const delta = familyQtyButton.dataset.familyAction === "plus" ? letterState.step : -letterState.step;
-      updateFamilyQty(familyQtyButton.dataset.familyQty, delta);
-      return;
-    }
-
-    const variantQtyButton = event.target.closest("[data-variant-action][data-variant]");
-    if (variantQtyButton) {
-      const delta = variantQtyButton.dataset.variantAction === "plus" ? letterState.step : -letterState.step;
-      updateVariantQty(variantQtyButton.dataset.variant, delta);
-      return;
-    }
-
-    const materialQtyButton = event.target.closest("[data-material-action][data-material]");
-    if (materialQtyButton) {
-      const delta = materialQtyButton.dataset.materialAction === "plus" ? letterState.step : -letterState.step;
-      updateMaterialQty(materialQtyButton.dataset.material, delta);
-      return;
-    }
-
-    const productQtyButton = event.target.closest("[data-product-action][data-product]");
-    if (productQtyButton) {
-      const delta = productQtyButton.dataset.productAction === "plus" ? letterState.step : -letterState.step;
-      updateProductQty(productQtyButton.dataset.product, delta);
-      return;
-    }
-
-    const letterStepButton = event.target.closest("[data-letter-step]");
-    if (letterStepButton) {
-      letterState.step = Number(letterStepButton.dataset.letterStep);
-      render();
-      return;
-    }
-
-    const letterFilterButton = event.target.closest("[data-letter-filter]");
-    if (letterFilterButton) {
-      letterState.filter = letterFilterButton.dataset.letterFilter;
-      render();
-      return;
-    }
-
-    const letterActionButton = event.target.closest("[data-letter-action][data-letter][data-letter-size]");
-    if (letterActionButton) {
-      const { letterAction, letter, letterSize } = letterActionButton.dataset;
-      if (letterAction === "increase") updateLetterQty(letter, letterSize, letterState.step);
-      if (letterAction === "decrease") updateLetterQty(letter, letterSize, -letterState.step);
-      return;
-    }
-
-    const clearCategoryButton = event.target.closest("[data-category-clear]");
-    if (clearCategoryButton) {
-      clearActiveSection();
-    }
-  });
-
-  html.families.addEventListener("change", (event) => {
-    const familyInput = event.target.closest("[data-family-input]");
-    if (familyInput) {
-      setFamilyQty(familyInput.dataset.familyInput, familyInput.value);
-      return;
-    }
-
-    const variantInput = event.target.closest("[data-variant-input]");
-    if (variantInput) {
-      setVariantQty(variantInput.dataset.variantInput, variantInput.value);
-      return;
-    }
-
-    const productInput = event.target.closest("[data-product-input]");
-    if (productInput) {
-      setProductQty(productInput.dataset.productInput, productInput.value);
-      return;
-    }
-
-    const materialInput = event.target.closest("[data-material-input]");
-    if (materialInput) {
-      setMaterialQty(materialInput.dataset.materialInput, materialInput.value);
-      return;
-    }
-
-    const letterInput = event.target.closest("[data-letter-input][data-letter-size]");
-    if (letterInput) {
-      setLetterQty(letterInput.dataset.letterInput, letterInput.dataset.letterSize, letterInput.value);
-    }
-  });
-
-  html.search.addEventListener("input", (event) => {
-    searchTerm = event.target.value.trim();
-    renderFamilies();
-  });
-
-  html.summaryToggle.addEventListener("click", () => {
-    summaryOpen = !summaryOpen;
-    renderSummary();
-  });
-
-  html.sendButton.addEventListener("click", sendOrder);
-
-  if (html.emailFrame) {
-    html.emailFrame.addEventListener("load", () => {
-      if (!emailSubmissionPending) return;
-      emailSubmissionPending = false;
-      clearCurrentOrder();
-      setStatus(pendingEmailStatusMessage || "Pedido enviado por mail.", "success");
-      pendingEmailStatusMessage = "";
-    });
-  }
-
-  if (html.openDesigns) {
-    html.openDesigns.addEventListener("click", openDesignsModal);
-  }
-
-  if (html.closeDesigns) {
-    html.closeDesigns.addEventListener("click", closeDesignsModal);
-  }
-
-  if (html.designsModal) {
-    html.designsModal.addEventListener("click", (event) => {
-      if (event.target === html.designsModal) {
-        closeDesignsModal();
-      }
-    });
-  }
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && html.designsModal && !html.designsModal.classList.contains("hidden")) {
-      closeDesignsModal();
-    }
-  });
-
-  if (html.scrollToBottom && html.catalogScroll) {
-    html.scrollToBottom.addEventListener("click", () => {
-      html.catalogScroll.scrollTo({
-        top: html.catalogScroll.scrollHeight,
-        behavior: "smooth",
-      });
-
-      if (html.sendButton) {
-        html.sendButton.scrollIntoView({ behavior: "smooth", block: "end" });
-      }
-    });
-
-    html.catalogScroll.addEventListener("scroll", showScrollButtonTemporarily, { passive: true });
-    window.addEventListener("scroll", showScrollButtonTemporarily, { passive: true });
-    window.addEventListener(
-      "resize",
-      () => {
+  window.PedidosApp.bindAppEvents({
+    html,
+    actions: {
+      openCategoryHome: () => {
+        categoryHomeOpen = true;
+        activeCategoryId = "";
+        render();
+      },
+      selectSection: (sectionId) => {
+        activeThickness = sectionId;
+        categoryHomeOpen = false;
+        activeCategoryId = "";
+        render();
+      },
+      selectCategory: (sectionId, categoryId) => {
+        activeThickness = sectionId;
+        activeCategoryId = categoryId;
+        categoryHomeOpen = false;
+        if (html.catalogScroll) html.catalogScroll.scrollTo({ top: 0, behavior: "smooth" });
+        render();
+      },
+      clearOrder: () => {
+        clearCurrentOrder();
+        setStatus("Se limpió el pedido.", "success");
+      },
+      toggleFamily,
+      toggleKitGroup,
+      adjustFamily: (id, action) => updateFamilyQty(id, action === "plus" ? letterState.step : -letterState.step),
+      adjustVariant: (id, action) => updateVariantQty(id, action === "plus" ? letterState.step : -letterState.step),
+      adjustMaterial: (id, action) => updateMaterialQty(id, action === "plus" ? letterState.step : -letterState.step),
+      adjustProduct: (id, action) => updateProductQty(id, action === "plus" ? letterState.step : -letterState.step),
+      setLetterStep: (step) => { letterState.step = Number(step); render(); },
+      setLetterFilter: (filter) => { letterState.filter = filter; render(); },
+      adjustLetter: (letter, size, action) => {
+        updateLetterQty(letter, size, action === "increase" ? letterState.step : -letterState.step);
+      },
+      clearSection: clearActiveSection,
+      setFamilyQty,
+      setVariantQty,
+      setProductQty,
+      setMaterialQty,
+      setLetterQty,
+      search: (term) => { searchTerm = term.trim(); renderFamilies(); },
+      toggleSummary: () => { summaryOpen = !summaryOpen; renderSummary(); },
+      sendOrder,
+      emailFrameLoaded: () => {
+        if (!emailSubmissionPending) return;
+        emailSubmissionPending = false;
+        clearCurrentOrder();
+        setStatus(pendingEmailStatusMessage || "Pedido enviado por mail.", "success");
+        pendingEmailStatusMessage = "";
+      },
+      openDesigns: openDesignsModal,
+      closeDesigns: closeDesignsModal,
+      showScrollButton: showScrollButtonTemporarily,
+      hideScrollButton,
+      updateScrollButton: () => {
         if (getRemainingScroll() < 24) hideScrollButton();
       },
-      { passive: true }
-    );
-    hideScrollButton();
-  }
+    },
+  });
 }
 
-async function loadCatalogFromSheet() {
-  if (!clientConfig) {
-    throw new Error("Cliente no configurado");
-  }
-
-  const loadSheetData = (gid) => window.PedidosApp.loadSheetData(clientConfig, gid);
-
-  if (catalogAdapter?.createCatalog) {
-    const sourceData = await loadSheetData(clientConfig.catalogSheetGid || clientConfig.sheetGid);
-    return catalogAdapter.createCatalog(sourceData);
-  }
-
-  if (clientConfig?.catalogMode === "moreira-categories") {
-    const categoriesData = await loadSheetData(clientConfig.catalogSheetGid || clientConfig.sheetGid);
-    const rows = categoriesData?.table?.rows || [];
-
-    const letterPriceRow = rows.find((row) => String(row?.c?.[11]?.v || "").trim() === lettersConfig.priceRowLabel);
-    if (letterPriceRow) {
-      lettersConfig.sizes.forEach((size, index) => {
-        const rawValue = letterPriceRow.c?.[index + 12]?.v;
-        letterState.prices[size] = normalizePrice(rawValue);
-      });
-    }
-
-    const kitsMap = new Map();
-    const individuals = [];
-
-    rows.forEach((row, rowIndex) => {
-      const cells = row.c || [];
-
-      const kitFullName = String(cells[0]?.v || "").trim();
-      const kitName = String(cells[1]?.v || "").trim();
-      const kitMaterial = String(cells[2]?.v || "").trim();
-      const kitObject = String(cells[3]?.v || "").trim();
-      const kitPrice = Number(cells[4]?.v);
-
-      if (kitFullName && kitName && kitMaterial && kitObject && Number.isFinite(kitPrice)) {
-        const familyId = `kit-${slugify(kitName)}`;
-        if (!kitsMap.has(familyId)) {
-          kitsMap.set(familyId, {
-            id: familyId,
-            name: kitName,
-            type: "kit",
-            open: false,
-            products: [],
-            materialGroups: [],
-            sortIndex: rowIndex,
-            basePrice: 0,
-          });
-        }
-
-        const family = kitsMap.get(familyId);
-        family.products.push({
-          id: `prd-${familyId}-${slugify(kitFullName)}-${rowIndex}`,
-          name: kitFullName,
-          material: kitMaterial,
-          object: kitObject,
-          unitPrice: kitPrice,
-          sortIndex: rowIndex,
-        });
-        family.basePrice += kitPrice;
-      }
-
-      const individualFullName = String(cells[6]?.v || "").trim();
-      const individualObject = String(cells[7]?.v || "").trim();
-      const individualMaterial = String(cells[8]?.v || "").trim();
-      const individualPrice = Number(cells[9]?.v);
-
-      if (individualFullName && individualMaterial && Number.isFinite(individualPrice)) {
-        individuals.push({
-          id: `prd-individual-${slugify(individualFullName)}-${rowIndex}`,
-          name: individualFullName,
-          object: individualObject,
-          material: individualMaterial,
-          unitPrice: individualPrice,
-          sortIndex: rowIndex,
-        });
-      }
-    });
-
-    return [
-      {
-        id: "kits",
-        name: "Kits",
-        summaryLabel: "Kits",
-        icon: "deployed_code",
-        type: "kits",
-        families: Array.from(kitsMap.values())
-          .map((family) => ({
-            ...family,
-            products: family.products.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-            materialGroups: groupProductsBy(family.products, "material").map((group) => ({
-              id: `mat-${family.id}-${slugify(group.label)}`,
-              name: group.label,
-              basePrice: group.items.reduce((sum, item) => sum + item.unitPrice, 0),
-              products: group.items.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-            })),
-          }))
-          .sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-      },
-      {
-        id: "individuales",
-        name: "Individuales",
-        summaryLabel: "Individuales",
-        icon: "inventory_2",
-        type: "price-list",
-        families: [],
-        products: individuals.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-      },
-      {
-        id: "letras",
-        name: "Letras",
-        summaryLabel: "Letras",
-        icon: "title",
-        type: "letters",
-        families: [],
-        products: [],
-      },
-    ].filter(
-      (section) =>
-        section.type === "letters" ||
-        section.families?.length > 0 ||
-        section.products?.length > 0
-    );
-  }
-
-  if (clientConfig?.catalogMode === "moreira-shared-price-list") {
-    const sourceData = await loadSheetData(clientConfig.catalogSheetGid || clientConfig.sheetGid);
-    const columns = sourceData?.table?.cols || [];
-    const rows = sourceData?.table?.rows || [];
-    const indexes = Object.fromEntries(
-      columns.map((column, index) => [normalizeSheetLabel(column.label), index])
-    );
-    const getCell = (cells, label) => {
-      const index = indexes[normalizeSheetLabel(label)];
-      const value = index === undefined ? "" : cells[index]?.v;
-      return value === null || value === undefined ? "" : value;
-    };
-    const normalizeMoreiraMaterial = (value) => {
-      const normalized = normalizeSheetLabel(value).replace(/\s+/g, "");
-      if (normalized === "3mm") return "MDF 3";
-      if (normalized === "5mm") return "MDF 5";
-      return String(value || "").trim();
-    };
-    const kitsMap = new Map();
-    const individuals = [];
-
-    rows.forEach((row, rowIndex) => {
-      const cells = row.c || [];
-      const section = normalizeSheetLabel(getCell(cells, "Sección"));
-      const category = String(getCell(cells, "Categoría")).trim();
-      const productName = String(getCell(cells, "Producto")).trim();
-      const material = normalizeMoreiraMaterial(getCell(cells, "Material"));
-      const unitPrice = normalizePrice(getCell(cells, "Precio"));
-
-      if (!section || !productName || !Number.isFinite(unitPrice)) return;
-
-      if (section === "letras") {
-        const size = productName.match(/\b(22|27|33)\b/)?.[1];
-        if (size && lettersConfig.sizes.includes(size)) letterState.prices[size] = unitPrice;
-        return;
-      }
-
-      if (section === "kits" && category && material) {
-        const kitName = /^kit\s/i.test(category) ? category : `Kit ${category}`;
-        const familyId = `kit-${slugify(kitName)}`;
-        if (!kitsMap.has(familyId)) {
-          kitsMap.set(familyId, { id: familyId, name: kitName, type: "kit", open: false, products: [], materialGroups: [], sortIndex: rowIndex, basePrice: 0 });
-        }
-        const family = kitsMap.get(familyId);
-        family.products.push({ id: `prd-${familyId}-${slugify(material)}-${slugify(productName)}-${rowIndex}`, name: `${kitName} ${material} ${productName}`, material, object: productName, unitPrice, sortIndex: rowIndex });
-        family.basePrice += unitPrice;
-        return;
-      }
-
-      if (section === "individuales" && material) {
-        individuals.push({ id: `prd-individual-${slugify(productName)}-${slugify(material)}-${rowIndex}`, name: `${productName} ${material}`, object: productName, material, unitPrice, sortIndex: rowIndex });
-      }
-    });
-
-    return [
-      {
-        id: "kits", name: "Kits", summaryLabel: "Kits", icon: "deployed_code", type: "kits",
-        families: Array.from(kitsMap.values()).map((family) => ({
-          ...family,
-          products: family.products.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-          materialGroups: groupProductsBy(family.products, "material").map((group) => ({
-            id: `mat-${family.id}-${slugify(group.label)}`, name: group.label,
-            basePrice: group.items.reduce((sum, item) => sum + item.unitPrice, 0),
-            products: group.items.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-          })),
-        })).sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-      },
-      { id: "individuales", name: "Individuales", summaryLabel: "Individuales", icon: "inventory_2", type: "price-list", families: [], products: individuals.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)) },
-      { id: "letras", name: "Letras", summaryLabel: "Letras", icon: "title", type: "letters", families: [], products: [] },
-    ].filter((section) => section.type === "letters" || section.families?.length > 0 || section.products?.length > 0);
-  }
-
-  if (clientConfig?.catalogMode === "categorized-price-list") {
-    const sourceData = await loadSheetData(clientConfig.catalogSheetGid || clientConfig.sheetGid);
-    const columns = sourceData?.table?.cols || [];
-    const sourceRows = sourceData?.table?.rows || [];
-    const indexes = Object.fromEntries(
-      columns.map((column, index) => [normalizeSheetLabel(column.label), index])
-    );
-    const getCell = (cells, label) => {
-      const index = indexes[normalizeSheetLabel(label)];
-      const value = index === undefined ? "" : cells[index]?.v;
-      return value === null || value === undefined ? "" : value;
-    };
-    const sections = new Map();
-
-    sourceRows.forEach((row, rowIndex) => {
-      const cells = row.c || [];
-      const sectionName = String(getCell(cells, "Sección")).trim();
-      const categoryName = String(getCell(cells, "Categoría")).trim();
-      const productName = String(getCell(cells, "Producto")).trim();
-      const model = String(getCell(cells, "Modelo")).trim();
-      const unitPrice = Number(getCell(cells, "Precio"));
-      const active = String(getCell(cells, "Activo")).trim().toLowerCase();
-
-      if (!sectionName || !productName || !Number.isFinite(unitPrice) || ["no", "false", "0"].includes(active)) {
-        return;
-      }
-
-      const sectionId = `section-${slugify(sectionName)}`;
-      if (!sections.has(sectionId)) {
-        sections.set(sectionId, {
-          id: sectionId,
-          name: sectionName,
-          summaryLabel: sectionName,
-          icon: sectionName.toLowerCase().includes("letra") ? "title" : "inventory_2",
-          type: "price-list",
-          families: [],
-          products: [],
-          categoriesMap: new Map(),
-          sortIndex: rowIndex,
-        });
-      }
-
-      const section = sections.get(sectionId);
-      const categoryLabel = categoryName || "Otros";
-      const categoryId = `category-${sectionId}-${slugify(categoryLabel)}`;
-      if (!section.categoriesMap.has(categoryId)) {
-        section.categoriesMap.set(categoryId, {
-          id: categoryId,
-          name: categoryLabel,
-          products: [],
-          sortIndex: rowIndex,
-        });
-      }
-
-      const product = {
-        id: `prd-${sectionId}-${slugify(categoryLabel)}-${slugify(productName)}-${slugify(model)}-${rowIndex}`,
-        name: productName,
-        model,
-        unitPrice,
-        sortIndex: rowIndex,
-      };
-      section.products.push(product);
-      section.categoriesMap.get(categoryId).products.push(product);
-    });
-
-    return Array.from(sections.values())
-      .sort((a, b) => a.sortIndex - b.sortIndex)
-      .map((section) => ({
-        ...section,
-        products: section.products.sort((a, b) => a.sortIndex - b.sortIndex),
-        categories: Array.from(section.categoriesMap.values())
-          .sort((a, b) => a.sortIndex - b.sortIndex)
-          .map((category) => ({
-            ...category,
-            products: category.products.sort((a, b) => a.sortIndex - b.sortIndex),
-          })),
-      }));
-  }
-
-  const data = await loadSheetData(clientConfig.sheetGid);
-  const cols = data?.table?.cols || [];
-  const rows = data?.table?.rows || [];
-  const indexes = Object.fromEntries(cols.map((col, index) => [col.label, index]));
-  const normalizedIndexes = Object.fromEntries(
-    cols.map((col, index) => [normalizeSheetLabel(col.label), index])
-  );
-
-  const getRaw = (cells, labelOrLabels) => {
-    const labels = Array.isArray(labelOrLabels) ? labelOrLabels : [labelOrLabels];
-    const index = labels.reduce((found, label) => {
-      if (found !== undefined) return found;
-      if (indexes[label] !== undefined) return indexes[label];
-      return normalizedIndexes[normalizeSheetLabel(label)];
-    }, undefined);
-    if (index === undefined) return "";
-    const cell = cells[index];
-    if (!cell || cell.v === null || cell.v === undefined) return "";
-    return cell.v;
-  };
-
-  const letterPriceRow = rows.find((row) => {
-    const firstCell = row?.c?.[0];
-    return String(firstCell?.v || "").trim() === lettersConfig.priceRowLabel;
-  });
-
-  if (letterPriceRow) {
-    lettersConfig.sizes.forEach((size, index) => {
-      const rawValue = letterPriceRow.c?.[index + 1]?.v;
-      const numeric = Number(rawValue);
-      letterState.prices[size] = Number.isFinite(numeric) ? numeric : 0;
-    });
-  }
-
-  if (clientConfig?.catalogMode === "price-list") {
-    const sections = [];
-    const fixedSections = getThicknessEntries().map((meta) => ({
-      id: meta.id,
-      name: meta.label,
-      summaryLabel: meta.summaryLabel || meta.label,
-      icon: meta.icon,
-      type: meta.type || "catalog",
-      families: [],
-      products: [],
-    }));
-
-    sections.push(...fixedSections);
-
-    const materialsMap = new Map();
-
-    rows.forEach((row, rowIndex) => {
-      const cells = row.c || [];
-      const productName = String(cells[7]?.v || "").trim();
-      const material = String(cells[8]?.v || "").trim();
-      const unitPrice = Number(cells[10]?.v);
-
-      if (!productName || !material || !Number.isFinite(unitPrice)) {
-        return;
-      }
-
-      const sectionId = `mat-${slugify(material)}`;
-      if (!materialsMap.has(sectionId)) {
-        materialsMap.set(sectionId, {
-          id: sectionId,
-          name: material,
-          summaryLabel: material,
-          icon: "inventory_2",
-          type: "price-list",
-          families: [],
-          products: [],
-        });
-      }
-
-      materialsMap.get(sectionId).products.push({
-        id: `prd-${sectionId}-${slugify(productName)}-${rowIndex}`,
-        name: productName,
-        material,
-        unitPrice,
-        sortIndex: rowIndex,
-      });
-    });
-
-    sections.push(
-      ...Array.from(materialsMap.values())
-        .map((section) => ({
-          ...section,
-          products: section.products.sort(
-            (a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)
-          ),
-        }))
-        .sort((a, b) => compareText(a.name, b.name))
-    );
-
-    return sections.filter((section) => section.type === "letters" || section.products.length > 0);
-  }
-
-  const sectionsMap = new Map(
-    getThicknessEntries().map((meta) => [
-      meta.id,
-      {
-        id: meta.id,
-        name: meta.label,
-        icon: meta.icon,
-        type: getSectionType(meta.id),
-        familiesMap: new Map(),
-      },
-    ])
-  );
-
-  rows.forEach((row, rowIndex) => {
-    const cells = row.c || [];
-    const rawFamilyName = String(getRaw(cells, "Familia") || "").trim();
-    const productName = String(getRaw(cells, "Producto") || "").trim();
-    const rawPlates = getRaw(cells, "placas");
-    const thickness = String(getRaw(cells, "espesor") || "").trim();
-    const type = slugify(getRaw(cells, "tipo"));
-    const plates = Number(rawPlates);
-    const explicitPlateLabel = String(
-      getRaw(cells, ["placa", "placa_corte", "placa de corte", "medida_placa", "medida de placa"]) || ""
-    )
-      .trim()
-      .replace(/\s+/g, "")
-      .toLowerCase();
-    const parsedFamilyVariant = parseFamilyPlateVariant(rawFamilyName);
-    const familyName = parsedFamilyVariant.familyName || rawFamilyName;
-    const plateLabel = explicitPlateLabel || parsedFamilyVariant.plateLabel;
-
-    if (!rawFamilyName || !productName || !Number.isFinite(plates) || !sectionsMap.has(thickness)) {
-      return;
-    }
-
-    if (isLettersSection(thickness)) {
-      return;
-    }
-
-    const normalizedType = type === "individual" ? "individual" : "grupo";
-    const section = sectionsMap.get(thickness);
-    const normalizedFamilyName = normalizedType === "individual" ? "Individuales" : familyName;
-    const familyId = `fam-${thickness}-${slugify(normalizedFamilyName)}`;
-
-    if (!section.familiesMap.has(familyId)) {
-      section.familiesMap.set(familyId, {
-        id: familyId,
-        name: normalizedFamilyName,
-        type: normalizedType,
-        open: false,
-        products: [],
-        variantsMap: new Map(),
-        sortIndex: rowIndex,
-      });
-    }
-
-    const family = section.familiesMap.get(familyId);
-    const product = {
-      id: `prd-${familyId}-${slugify(productName)}-${rowIndex}`,
-      name: productName,
-      plates,
-      sourceFamily: rawFamilyName,
-      plateLabel,
-      sortIndex: rowIndex,
-    };
-
-    if (normalizedType === "grupo" && plateLabel) {
-      const variantId = `var-${familyId}-${slugify(plateLabel)}`;
-      if (!family.variantsMap.has(variantId)) {
-        family.variantsMap.set(variantId, {
-          id: variantId,
-          plateLabel,
-          products: [],
-          sortIndex: rowIndex,
-        });
-      }
-
-      family.variantsMap.get(variantId).products.push(product);
-    }
-
-    family.products.push(product);
-  });
-
-  return getThicknessEntries()
-    .map((meta) => {
-      const section = sectionsMap.get(meta.id);
-      return {
-        id: section.id,
-        name: section.name,
-        icon: section.icon,
-        type: section.type,
-        families: Array.from(section.familiesMap.values())
-          .sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name))
-          .map((family) => ({
-            ...family,
-            products: family.products.sort(
-              (a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)
-            ),
-            variants: Array.from(family.variantsMap?.values() || [])
-              .map((variant) => ({
-                ...variant,
-                products: variant.products.sort(
-                  (a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)
-                ),
-              }))
-              .sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.plateLabel, b.plateLabel)),
-          })),
-      };
-    })
-    .filter((section) => section.type === "letters" || section.families.length > 0);
-}
+const loadCatalogFromSheet = window.PedidosApp.createCatalogLoader({
+  clientConfig,
+  catalogAdapter,
+  lettersConfig,
+  letterState,
+  normalizePrice,
+  normalizeSheetLabel,
+  slugify,
+  compareText,
+  groupProductsBy: window.PedidosApp.groupProductsBy,
+  getThicknessEntries,
+  getSectionType,
+  parseFamilyPlateVariant,
+  isLettersSection,
+});
 
 function render() {
   renderTabs();

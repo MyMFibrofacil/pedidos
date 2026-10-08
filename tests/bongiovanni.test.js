@@ -29,10 +29,17 @@ function createEnvironment(clientKey, data) {
   for (const file of [
     "clients.js", "src/config/client.js", "src/state/create-app-state.js",
     "src/state/create-quantity-manager.js",
+    "src/state/create-letters-manager.js",
     "src/catalogs/bongiovanni.js", "src/data/google-sheets.js",
     "src/order/summary.js", "src/order/message.js", "src/order/xubio-order.js",
+    "src/order/send-order.js",
+    "src/utils/catalog-groups.js", "src/catalogs/create-catalog-loader.js",
     "src/ui/catalog-family-renderer.js",
     "src/ui/order-summary-renderer.js",
+    "src/ui/catalog-navigation-renderer.js", "src/ui/letters-section-renderer.js",
+    "src/ui/price-list-renderer.js",
+    "src/events/bind-app-events.js",
+    "src/ui/create-screen-feedback.js",
   ]) {
     vm.runInContext(source(file), context);
   }
@@ -169,4 +176,16 @@ test("el resumen presenta totales y detalle a partir del pedido calculado", asyn
   assert.match(html.summaryTotals.innerHTML, /Total general:/);
   assert.match(html.summaryDetailsList.innerHTML, /Cama Emi/);
   assert.equal(html.sendButton.disabled, false);
+});
+
+test("el cargador arma agrupaciones compartidas de kits de Moreira", async () => {
+  const data = table(["Sección", "Categoría", "Producto", "Material", "Precio"], [
+    ["Kits", "Comedor", "Mesa", "MDF 3", 120],
+    ["Kits", "Comedor", "Silla", "MDF 3", 80],
+  ]);
+  const { controller } = createEnvironment("moreira", data);
+  const catalog = await controller.loadCatalogFromSheet();
+
+  assert.equal(catalog[0].families[0].materialGroups.length, 1);
+  assert.equal(catalog[0].families[0].materialGroups[0].basePrice, 200);
 });

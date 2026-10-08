@@ -5,13 +5,58 @@
       escapeHtml, slugify, compareText, formatCurrency, normalizePrice,
       getFamilyQty, getVariantQty, getProductQty, getMaterialQty,
       getFamilyProducts, getFamilyVariants, hasPlateVariants,
-      getVariantBasePlates, getFamilyGroupTotalPlates, getSinglePlateReference,
-      getProductDisplayName, filteredProductsForFamily, filteredVariantsForFamily,
-      searchMatchesFamily, getRenderState,
+      getVariantBasePlates, getFamilyGroupTotalPlates, getSinglePlateReference, groupProductsBy,
+      getProductDisplayName, getRenderState,
     } = dependencies;
     let searchTerm = '';
     let kitGroupOpenState = {};
     let catalogAdapter = null;
+
+  function searchMatchesFamily(family) {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    if (family.name.toLowerCase().includes(term)) return true;
+    if (getFamilyVariants(family).some((variant) => String(variant.plateLabel || "").toLowerCase().includes(term))) {
+      return true;
+    }
+    return getFamilyProducts(family).some((product) => (
+      product.name.toLowerCase().includes(term)
+      || String(product.plateLabel || "").toLowerCase().includes(term)
+      || String(product.material || "").toLowerCase().includes(term)
+      || String(product.object || "").toLowerCase().includes(term)
+    ));
+  }
+
+  function filteredProductsForFamily(family) {
+    const products = getFamilyProducts(family);
+    if (!searchTerm) return products;
+    const term = searchTerm.toLowerCase();
+    return products.filter((product) => (
+      family.name.toLowerCase().includes(term)
+      || product.name.toLowerCase().includes(term)
+      || String(product.plateLabel || "").toLowerCase().includes(term)
+      || String(product.material || "").toLowerCase().includes(term)
+      || String(product.object || "").toLowerCase().includes(term)
+    ));
+  }
+
+  function filteredVariantsForFamily(family) {
+    const variants = getFamilyVariants(family);
+    if (!searchTerm) return variants;
+    const term = searchTerm.toLowerCase();
+    return variants.map((variant) => {
+      const variantMatches = String(variant.plateLabel || "").toLowerCase().includes(term);
+      const products = (variant.products || []).filter((product) => (
+        family.name.toLowerCase().includes(term)
+        || variantMatches
+        || product.name.toLowerCase().includes(term)
+        || String(product.material || "").toLowerCase().includes(term)
+        || String(product.object || "").toLowerCase().includes(term)
+      ));
+      if (!variantMatches && !products.length && !family.name.toLowerCase().includes(term)) return null;
+      return { ...variant, products: products.length > 0 ? products : variant.products };
+    }).filter(Boolean);
+  }
 
   function renderGroupFamilyDetails(family, products) {
     const familyQty = getFamilyQty(family.id);
@@ -308,19 +353,6 @@
         }
       </section>
     `;
-  }
-  
-  function groupProductsBy(products, key) {
-    const groups = new Map();
-    products.forEach((product) => {
-      const value = String(product[key] || "").trim();
-      if (!value) return;
-      if (!groups.has(value)) groups.set(value, []);
-      groups.get(value).push(product);
-    });
-    return Array.from(groups.entries())
-      .sort((a, b) => compareText(a[0], b[0]))
-      .map(([label, items]) => ({ label, items }));
   }
   
   function renderKitFamilyDetails(family, products) {

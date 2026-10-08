@@ -15,13 +15,15 @@ Pedidos_medida/
 ├── controller.js                 Compatibilidad con páginas antiguas en caché
 ├── src/
 │   ├── bootstrap/                 Inicio común de la aplicación
-│   ├── catalogs/                  Adaptadores para catálogos especiales
+│   ├── catalogs/                  Adaptadores y carga de catálogos
 │   ├── config/                    Detección y configuración activa
 │   ├── controller/                Coordinación de la pantalla
 │   ├── data/                      Lectura de Google Sheets
-│   ├── order/                     Resumen, mensaje y datos para Xubio
+│   ├── events/                    Enlace de eventos de la interfaz
+│   ├── order/                     Cálculo, armado y envío de pedidos
 │   ├── state/                     Estado y cantidades del pedido
-│   └── ui/                        Referencias a elementos HTML
+│   ├── ui/                        Presentación por tipo de pantalla
+│   └── utils/                     Utilidades compartidas
 ├── rivadavia/                     Pantalla y documentación de Rivadavia
 ├── moreira/                       Pantalla y recursos de Moreira
 ├── valeria/                       Pantalla de Valeria Lotz
@@ -45,13 +47,19 @@ Las pantallas usan estos enlaces:
 
 - `clients.js` define hojas, identificadores, textos y modo de envío de cada cliente.
 - `src/data/google-sheets.js` obtiene datos de la pestaña configurada.
-- `src/catalogs/` adapta formatos de catálogo particulares, como las tandas de Bongiovanni.
-- `src/order/` calcula el resumen y prepara el mensaje y las unidades que recibe Xubio.
+- `src/catalogs/create-catalog-loader.js` convierte las hojas de cada cliente al modelo común; los adaptadores manejan formatos particulares.
+- `src/order/` calcula el resumen y prepara el mensaje, el envío y las unidades que recibe Xubio.
 - `src/state/create-quantity-manager.js` administra las cantidades de familias, variantes, productos y materiales.
-- `src/ui/` construye las tarjetas del catálogo y presenta el resumen del pedido.
+- `src/state/create-letters-manager.js` administra filtros, cantidades y totales de caracteres.
+- `src/events/bind-app-events.js` conecta las acciones de pantalla con el controlador.
+- `src/utils/catalog-groups.js` agrupa productos para reutilizarlos entre catálogos y vistas.
 - `src/ui/catalog-family-renderer.js` construye las tarjetas de familias, kits, variantes y productos.
+- `src/ui/catalog-navigation-renderer.js` presenta las pestañas y selección de categorías.
+- `src/ui/letters-section-renderer.js` presenta la carga rápida de caracteres.
+- `src/ui/price-list-renderer.js` presenta listas de precios y sus categorías.
 - `src/ui/order-summary-renderer.js` presenta los totales y el detalle del pedido.
-- `src/controller/create-app-controller.js` coordina cantidades, eventos y presentación.
+- `src/ui/create-screen-feedback.js` administra mensajes, diálogos y ayudas de desplazamiento.
+- `src/controller/create-app-controller.js` coordina el estado y los módulos de la pantalla.
 - `src/bootstrap/start-app.js` crea contexto, estado y pantalla para el cliente activo.
 - `google_apps_script/pedidos/` contiene el código fuente que se publica manualmente en Apps Script.
 - `impresion_presupuestos/` consulta avisos internos, descarga el PDF y lo envía a la impresora.
