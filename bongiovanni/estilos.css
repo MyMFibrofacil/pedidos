@@ -1,0 +1,66 @@
+/* Distribución y controles de cantidad propios de Bongiovanni. */
+.producto-tanda {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  align-items: start;
+  gap: 10px;
+  padding: 14px 12px;
+  background: #fff;
+}
+
+.detalle-tanda,
+.detalle-tanda details,
+.detalle-tanda summary,
+.detalle-tanda .precios-unitarios {
+  min-width: 0;
+  background: transparent;
+}
+
+.detalle-tanda summary {
+  gap: 6px;
+  list-style: none;
+}
+
+.detalle-tanda summary::-webkit-details-marker { display: none; }
+.detalle-tanda summary .material-symbols-outlined { font-size: 20px; }
+.detalle-tanda .precios-unitarios {
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0;
+  padding: 8px 0 0;
+}
+
+.cantidad-tanda {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  box-sizing: border-box;
+  width: 96px;
+  min-width: 96px;
+  max-width: 96px;
+  height: 40px;
+  padding: 4px;
+}
+
+.cantidad-tanda > button {
+  flex: 0 0 28px;
+  width: 28px;
+  min-width: 28px;
+  height: 32px;
+  padding: 0;
+}
+
+.cantidad-tanda > input[type="number"] {
+  flex: 0 0 32px;
+  box-sizing: border-box;
+  width: 32px;
+  min-width: 0;
+  max-width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-size: 14px;
+}

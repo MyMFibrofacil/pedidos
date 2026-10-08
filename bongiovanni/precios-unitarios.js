@@ -22,6 +22,10 @@
       const row = input.parentElement.parentElement;
       if (!product || row.dataset.unitPricesShown) return;
       const details = row.firstElementChild;
+      row.classList.add("producto-tanda");
+      details.classList.add("detalle-tanda");
+      input.parentElement.classList.add("cantidad-tanda");
+      input.setAttribute("aria-label", `Tandas de ${product.name}`);
       const productName = details.querySelector("p:nth-of-type(1)");
       const batchContents = details.querySelector("p:nth-of-type(2)");
       const batchPrice = details.querySelector("p:nth-of-type(3)");
@@ -45,7 +49,7 @@
       summary.append(heading, indicator);
       disclosure.appendChild(summary);
       const panel = document.createElement("div");
-      panel.className = "mt-2 rounded-lg bg-slate-50 px-3 py-2 space-y-1";
+      panel.className = "precios-unitarios mt-2 space-y-1";
       const title = document.createElement("p");
       title.className = "text-xs font-semibold text-slate-600";
       title.textContent = "Precio individual por producto";
