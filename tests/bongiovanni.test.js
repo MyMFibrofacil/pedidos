@@ -38,7 +38,7 @@ function createEnvironment(clientKey, data) {
   // Expone funciones internas solamente en memoria para verificar el código real.
   const controllerSource = source("src/controller/create-app-controller.js").replace(
     /return \{\s*init,\s*\};/,
-    "return { init, loadCatalogFromSheet, summary, buildWhatsAppText, buildXubioOrderData, submitEmailForm, renderQuickStepButtons, renderPriceListSection, bindEvents, clearCurrentOrder, setCatalog: value => { catalog = value; } };"
+    "return { init, loadCatalogFromSheet, summary, buildWhatsAppText, buildXubioOrderData, submitEmailForm, renderQuickStepButtons, renderPriceListSection, renderFamilies, bindEvents, clearCurrentOrder, setCatalog: value => { catalog = value; } };"
   );
   vm.runInContext(controllerSource, context);
   const api = context.window.PedidosApp;
@@ -132,12 +132,17 @@ test("Moreira, Valeria, Alan y Rivadavia conservan sus cálculos y selectores", 
       : key === "moreira"
         ? table(["Sección", "Categoría", "Producto", "Material", "Precio"], [["Individuales", "Otros", "Caja", "3mm", 100]])
         : table(["Sección", "Categoría", "Producto", "Modelo", "Precio", "Activo"], [["MDF", "Cajas", "Caja", "A", 100, "si"]]);
-    const { controller, state } = createEnvironment(key, data);
+    const { controller, state, html } = createEnvironment(key, data);
     const catalog = await controller.loadCatalogFromSheet();
     controller.setCatalog(catalog);
     if (key === "rivadavia") {
       state.familyQuantities[catalog[0].families[0].id] = 2;
       assert.equal(controller.summary().totalCount, 168);
+      catalog[0].families[0].open = true;
+      html.families = { innerHTML: "" };
+      html.empty = { classList: { add() {}, remove() {}, toggle() {} } };
+      controller.renderFamilies();
+      assert.match(html.families.innerHTML, /Grafico 1/);
     } else {
       state.productQuantities[catalog[0].products[0].id] = 2;
       assert.equal(controller.summary().totalValue, 200);

@@ -6,7 +6,8 @@
       getFamilyQty, getVariantQty, getProductQty, getMaterialQty,
       getFamilyProducts, getFamilyVariants, hasPlateVariants,
       getVariantBasePlates, getFamilyGroupTotalPlates, getSinglePlateReference,
-      getProductDisplayName, getRenderState,
+      getProductDisplayName, filteredProductsForFamily, filteredVariantsForFamily,
+      searchMatchesFamily, getRenderState,
     } = dependencies;
     let searchTerm = '';
     let kitGroupOpenState = {};

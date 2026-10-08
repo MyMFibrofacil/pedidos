@@ -376,6 +376,9 @@ const catalogFamilyRenderer = window.PedidosApp.createCatalogFamilyRenderer({
   getFamilyGroupTotalPlates,
   getSinglePlateReference,
   getProductDisplayName,
+  filteredProductsForFamily,
+  filteredVariantsForFamily,
+  searchMatchesFamily,
   getRenderState: () => ({ searchTerm, kitGroupOpenState, catalogAdapter }),
 });
 const renderCatalogFamily = catalogFamilyRenderer.renderFamilyCard;
