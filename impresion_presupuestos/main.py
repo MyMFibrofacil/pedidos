@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 
 from .config import DATA_DIR, load_settings
 from .mailbox import mark_seen, open_mailbox, pending_ids, read_job
@@ -56,11 +57,13 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="Verificar conexiones sin imprimir ni modificar correos")
     args = parser.parse_args()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(
+        DATA_DIR / "impresion.log", maxBytes=2_000_000, backupCount=3, encoding="utf-8"
+    )
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logging.basicConfig(
-        filename=DATA_DIR / "impresion.log",
         level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
-        encoding="utf-8",
+        handlers=[handler],
     )
     try:
         return run(check_only=args.check)
