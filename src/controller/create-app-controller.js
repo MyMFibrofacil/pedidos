@@ -26,12 +26,17 @@ let {
   toastTimer,
 } = state;
 
-const familyQuantities = state.familyQuantities;
+const quantityManager = window.PedidosApp.createQuantityManager({
+  state,
+  normalizeQty,
+  onChange: render,
+});
+const familyQuantities = quantityManager.quantities.family;
 const kitGroupOpenState = state.kitGroupOpenState;
 const letterState = state.letterState;
-const materialQuantities = state.materialQuantities;
-const productQuantities = state.productQuantities;
-const variantQuantities = state.variantQuantities;
+const materialQuantities = quantityManager.quantities.material;
+const productQuantities = quantityManager.quantities.product;
+const variantQuantities = quantityManager.quantities.variant;
 const catalogAdapter = window.PedidosApp?.catalogAdapters?.[clientConfig?.catalogMode];
 let currentOrderId = createOrderId();
 let categoryHomeOpen = Boolean(clientConfig?.categoryHome);
@@ -297,77 +302,20 @@ function getActiveThickness() {
   return catalog.find((section) => section.id === activeThickness);
 }
 
-function getFamilyQty(familyId) {
-  return familyQuantities[familyId] || 0;
-}
-
-function getVariantQty(variantId) {
-  return variantQuantities[variantId] || 0;
-}
-
-function getProductQty(productId) {
-  return productQuantities[productId] || 0;
-}
-
-function getMaterialQty(materialId) {
-  return materialQuantities[materialId] || 0;
-}
-
-function setFamilyQty(familyId, value) {
-  const next = normalizeQty(value);
-  if (next === 0) {
-    delete familyQuantities[familyId];
-  } else {
-    familyQuantities[familyId] = next;
-  }
-  render();
-}
-
-function updateFamilyQty(familyId, delta) {
-  setFamilyQty(familyId, getFamilyQty(familyId) + delta);
-}
-
-function setVariantQty(variantId, value) {
-  const next = normalizeQty(value);
-  if (next === 0) {
-    delete variantQuantities[variantId];
-  } else {
-    variantQuantities[variantId] = next;
-  }
-  render();
-}
-
-function updateVariantQty(variantId, delta) {
-  setVariantQty(variantId, getVariantQty(variantId) + delta);
-}
-
-function setProductQty(productId, value) {
-  const next = normalizeQty(value);
-  if (next === 0) {
-    delete productQuantities[productId];
-  } else {
-    productQuantities[productId] = next;
-  }
-  render();
-}
-
-function updateProductQty(productId, delta) {
-  setProductQty(productId, getProductQty(productId) + delta);
-}
-
-function setMaterialQty(materialId, value) {
-  const next = normalizeQty(value);
-  if (next === 0) {
-    delete materialQuantities[materialId];
-  } else {
-    materialQuantities[materialId] = next;
-  }
-  render();
-}
-
-function updateMaterialQty(materialId, delta) {
-  setMaterialQty(materialId, getMaterialQty(materialId) + delta);
-}
+const {
+  getFamilyQty,
+  getVariantQty,
+  getProductQty,
+  getMaterialQty,
+  setFamilyQty,
+  updateFamilyQty,
+  setVariantQty,
+  updateVariantQty,
+  setProductQty,
+  updateProductQty,
+  setMaterialQty,
+  updateMaterialQty,
+} = quantityManager;
 
 function getFamilyProducts(family) {
   if (Array.isArray(family?.variants) && family.variants.length > 0) {

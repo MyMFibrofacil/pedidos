@@ -20,7 +20,7 @@ Pedidos_medida/
 │   ├── controller/                Coordinación de la pantalla
 │   ├── data/                      Lectura de Google Sheets
 │   ├── order/                     Resumen, mensaje y datos para Xubio
-│   ├── state/                     Estado de la pantalla
+│   ├── state/                     Estado y cantidades del pedido
 │   └── ui/                        Referencias a elementos HTML
 ├── rivadavia/                     Pantalla y documentación de Rivadavia
 ├── moreira/                       Pantalla y recursos de Moreira
@@ -47,6 +47,7 @@ Las pantallas usan estos enlaces:
 - `src/data/google-sheets.js` obtiene datos de la pestaña configurada.
 - `src/catalogs/` adapta formatos de catálogo particulares, como las tandas de Bongiovanni.
 - `src/order/` calcula el resumen y prepara el mensaje y las unidades que recibe Xubio.
+- `src/state/create-quantity-manager.js` administra las cantidades de familias, variantes, productos y materiales.
 - `src/controller/create-app-controller.js` coordina cantidades, eventos y presentación.
 - `src/bootstrap/start-app.js` crea contexto, estado y pantalla para el cliente activo.
 - `google_apps_script/pedidos/` contiene el código fuente que se publica manualmente en Apps Script.
