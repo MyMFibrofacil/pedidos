@@ -98,9 +98,9 @@ XUBIO_PRINT_JOB: ${JSON.stringify({ transaccionId: Number(presupuesto.transaccio
       replyTo: String(payload.from || "").trim() || undefined,
     });
 
-    if (!xubioError && presupuesto.transaccionId) {
+    if (payload.order_data || payload.orderData) {
       try {
-        enviarCopiaCliente(presupuesto, payload, subject, customerBody);
+        enviarCopiaCliente(payload, subject, customerBody);
       } catch (error) {
         copyError = error && error.message ? error.message : "Error desconocido al enviar la copia al cliente.";
         console.error(error && error.stack ? error.stack : copyError);

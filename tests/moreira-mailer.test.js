@@ -64,10 +64,53 @@ test("Bongiovanni crea un presupuesto, envía el correo y evita duplicar el pres
   assert.equal(customerCopy[0], "bongiovanni@example.com");
   assert.match(customerCopy[2], /2 tandas de juguetero/);
   assert.doesNotMatch(customerCopy[2], /XUBIO_PRINT_JOB/);
+  assert.ok(emails.indexOf(orderEmail) < emails.indexOf(customerCopy));
   assert.equal(context.doPost(request).ok, true);
   assert.equal(budgets.length, 1);
   assert.equal(emails.filter((email) => email[1].startsWith("[IMPRIMIR XUBIO]")).length, 1);
   assert.equal(emails.filter((email) => email[1].startsWith("Copia de tu pedido -")).length, 1);
+});
+
+test("La copia llega con el pedido aunque falle la creación del presupuesto", () => {
+  const emails = [];
+  const properties = new Map([["PEDIDOS_COPIA_5481719", "moreira@example.com"]]);
+  const context = vm.createContext({
+    console: { error() {} },
+    GmailApp: { sendEmail: (...args) => emails.push(args) },
+    PropertiesService: { getScriptProperties: () => ({
+      getProperty: (key) => properties.get(key),
+      setProperty: (key, value) => properties.set(key, value),
+    }) },
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    Utilities: { formatDate: () => "2026-10-08" },
+    Session: { getScriptTimeZone: () => "America/Buenos_Aires" },
+    ContentService: {
+      MimeType: { JSON: "application/json" },
+      createTextOutput: (text) => ({ setMimeType: () => JSON.parse(text) }),
+    },
+  });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/Code.gs"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "../google_apps_script/moreira_mailer/CopiaCliente.gs"), "utf8"), context);
+  context.getXubioToken = () => { throw new Error("Xubio no disponible"); };
+  const request = { parameter: {
+    client_key: "moreira",
+    to: "mymfibrofacil.web@gmail.com",
+    subject: "Moreira - pedido simulado",
+    body: "Detalle del pedido de Moreira",
+    order_data: JSON.stringify({ orderId: "moreira-sin-xubio", items: [
+      { descripcion: "Producto de prueba", cantidad: 1, precio: 100 },
+    ] }),
+  } };
+  const response = context.doPost(request);
+  assert.equal(response.ok, false);
+  assert.match(response.error, /Xubio no disponible/);
+  assert.equal(emails.length, 2);
+  assert.equal(emails[0][0], "mymfibrofacil.web@gmail.com");
+  assert.equal(emails[1][0], "moreira@example.com");
+  assert.match(emails[1][2], /Detalle del pedido de Moreira/);
+  assert.doesNotMatch(emails[1][2], /Xubio no disponible/);
+  context.doPost(request);
+  assert.equal(emails.filter((email) => email[0] === "moreira@example.com").length, 1);
 });
 
 test("Moreira, Valeria y Alan imprimen y reciben copia; Rivadavia queda excluido", () => {

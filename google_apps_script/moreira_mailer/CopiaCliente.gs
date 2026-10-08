@@ -1,13 +1,10 @@
 /** Envía al cliente una copia limpia del pedido sin registrar personas. */
 const CUSTOMER_COPY_CLIENT_IDS = [5481719, 5482182, 5481712, 5482024];
 
-function enviarCopiaCliente(presupuesto, payload, subject, orderBody) {
+function enviarCopiaCliente(payload, subject, orderBody) {
   const clientKey = String(payload.client_key || payload.clientKey || "").trim().toLowerCase();
-  const clientId = Number(presupuesto && presupuesto.clientKey);
+  const clientId = Number(XUBIO.clientsByKey[clientKey]);
   if (!CUSTOMER_COPY_CLIENT_IDS.includes(clientId)) return { skipped: true };
-  if (!presupuesto.transaccionId || Number(XUBIO.clientsByKey[clientKey]) !== clientId) {
-    throw new Error("La copia del pedido no coincide con el cliente del presupuesto creado.");
-  }
 
   const properties = PropertiesService.getScriptProperties();
   const recipient = String(properties.getProperty(`PEDIDOS_COPIA_${clientId}`) || "").trim();
@@ -16,9 +13,6 @@ function enviarCopiaCliente(presupuesto, payload, subject, orderBody) {
   }
 
   const order = parseOrderData(payload.order_data || payload.orderData);
-  if (order.orderId !== String(presupuesto.orderId || "")) {
-    throw new Error("La copia del pedido no coincide con el presupuesto creado.");
-  }
   const sentKey = `pedido-copia-${clientId}-${order.orderId}`;
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);

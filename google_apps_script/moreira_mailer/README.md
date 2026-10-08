@@ -32,8 +32,9 @@ ese presupuesto. Rivadavia queda excluido de la impresión automática.
 ## Copia del pedido para cada cliente
 
 `CopiaCliente.gs` envía una copia del texto del pedido al correo habitual de
-Moreira, Valeria Lotz, Alan Alfonsín o Bongiovanni después de que se creó su
-presupuesto y se envió el pedido interno. No incluye la etiqueta interna
+Moreira, Valeria Lotz, Alan Alfonsín o Bongiovanni inmediatamente después de
+enviar el correo interno del pedido. La copia no depende de que Xubio cree el
+presupuesto. No incluye la etiqueta interna
 `XUBIO_PRINT_JOB` ni el PDF de Xubio. No pide correo en la pantalla ni guarda
 un registro nuevo de las personas que compran.
 
