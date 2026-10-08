@@ -41,6 +41,28 @@ precio, se usa el producto Xubio `Particular` y se conserva la descripción.
 La habilitación del cliente también debe estar presente en el despliegue de
 `../google_apps_script/moreira_mailer/Code.gs`.
 
+## Impresión local
+
+Apps Script envía una orden interna `[IMPRIMIR XUBIO]` a
+`mymfibrofacil@gmail.com`, manteniendo el pedido en `mymfibrofacil.web@gmail.com`.
+La tarea independiente de Windows `Pedidos Medida - Imprimir Bongiovanni`
+ejecuta `impresion_presupuestos` cada minuto. Descarga el PDF del presupuesto
+existente y lo envía a `Impresora Pablo Nico`, que debe ser la impresora
+predeterminada. La computadora debe estar encendida y con la sesión de Windows
+iniciada; FabricaApp puede permanecer cerrado.
+
+Las credenciales se guardan cifradas para el usuario de Windows en
+`%LOCALAPPDATA%\PedidosMedida\impresion_presupuestos`. El archivo de registro
+`impresion.log` y los PDFs enviados se conservan allí. Para comprobar las
+conexiones sin imprimir, ejecutar desde la raíz del proyecto:
+
+```powershell
+python -m impresion_presupuestos.main --check
+```
+
+La tarea `imprimir_presupuestos_web` del orquestador de FabricaApp queda
+deshabilitada para evitar impresiones duplicadas.
+
 Abrir `index.html` desde un servidor estático local o publicar los archivos
 manteniendo su estructura. Las pruebas locales no confirman el despliegue
 ni la recepción real del correo.

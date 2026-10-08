@@ -1,0 +1,3 @@
+python-dotenv
+pywin32
+requests
