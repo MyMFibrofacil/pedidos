@@ -48,6 +48,7 @@ Las pantallas usan estos enlaces:
 - `src/catalogs/` adapta formatos de catálogo particulares, como las tandas de Bongiovanni.
 - `src/order/` calcula el resumen y prepara el mensaje y las unidades que recibe Xubio.
 - `src/state/create-quantity-manager.js` administra las cantidades de familias, variantes, productos y materiales.
+- `src/ui/catalog-family-renderer.js` construye las tarjetas de familias, kits, variantes y productos.
 - `src/controller/create-app-controller.js` coordina cantidades, eventos y presentación.
 - `src/bootstrap/start-app.js` crea contexto, estado y pantalla para el cliente activo.
 - `google_apps_script/pedidos/` contiene el código fuente que se publica manualmente en Apps Script.

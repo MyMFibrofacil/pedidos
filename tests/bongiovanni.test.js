@@ -31,6 +31,7 @@ function createEnvironment(clientKey, data) {
     "src/state/create-quantity-manager.js",
     "src/catalogs/bongiovanni.js", "src/data/google-sheets.js",
     "src/order/summary.js", "src/order/message.js", "src/order/xubio-order.js",
+    "src/ui/catalog-family-renderer.js",
   ]) {
     vm.runInContext(source(file), context);
   }
