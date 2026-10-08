@@ -3,16 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pedidos Alan Alfonsín</title>
+    <title>Pedidos Alan Alfonsín · Prueba</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <script>
-      tailwind.config = { theme: { extend: { colors: { primary: "#166534", "background-light": "#f4fbf6", mail: "#2563eb" }, fontFamily: { display: "Inter" } } } };
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#146C43", "background-light": "#f4faf6", whatsapp: "#25D366" },
+            fontFamily: { display: "Inter" },
+          },
+        },
+      };
     </script>
     <style>
       body { min-height: max(884px, 100dvh); }
-      input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
       input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -28,12 +36,12 @@
       <textarea name="body" class="hidden"></textarea>
       <input type="hidden" name="client_key" value="" />
       <input type="hidden" name="client_name" value="" />
-      <input type="hidden" name="client_id" value="" />
       <input type="hidden" name="created_at" value="" />
       <textarea name="order_data" class="hidden"></textarea>
     </form>
     <header class="sticky top-0 z-50 bg-white border-b border-primary/10 shadow-sm relative">
-      <img id="app-logo" src="" alt="Logo" class="absolute top-2 right-3 w-8 h-8 object-contain opacity-70" onerror="this.style.display='none'" />
+      <div class="border-b border-emerald-100 bg-emerald-50 px-4 py-2 text-center text-xs font-bold text-emerald-800">VERSIÓN DE PRUEBA · Alan Alfonsín / Odin Led</div>
+      <img id="app-logo" src="" alt="Logo" class="absolute top-11 right-3 w-8 h-8 object-contain opacity-70" onerror="this.style.display='none'" />
       <div id="thickness-tabs" class="flex overflow-x-auto border-b border-slate-200 px-4 scrollbar-hide"></div>
       <div id="search-wrapper" class="px-4 py-3">
         <label class="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-100 focus-within:border-primary">
@@ -52,10 +60,18 @@
       <div id="summary-details-panel" class="absolute bottom-[calc(100%+8px)] left-4 right-4 hidden rounded-xl border border-slate-200 bg-white shadow-xl"><div class="border-b border-slate-200 px-4 py-3"><p id="summary-title" class="text-sm font-bold">Detalle del pedido</p></div><div id="summary-details-list" class="max-h-72 overflow-y-auto"></div></div>
       <button id="summary-toggle" class="flex w-full items-center justify-between rounded-lg px-2 py-2" type="button"><div id="summary-totals" class="min-w-0 flex-1 space-y-1"></div><span id="summary-chevron" class="material-symbols-outlined ml-3 text-slate-500">expand_less</span></button>
       <p id="status-message" class="min-h-4 px-2 text-xs text-slate-500"></p>
-      <button id="send-whatsapp" class="flex w-full items-center justify-center gap-2 rounded-xl bg-mail py-4 font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"><span class="material-symbols-outlined">mail</span><span id="send-button-label">Enviar pedido por mail</span></button>
+      <button id="send-whatsapp" class="flex w-full items-center justify-center gap-2 rounded-xl bg-whatsapp py-4 font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"><span class="material-symbols-outlined">send</span><span id="send-button-label">Enviar pedido por WhatsApp y mail</span></button>
     </div>
-    <script src="../clients.js?v=alan-20260928"></script>
-    <script src="../controller.js?v=alan-20260928"></script>
-    <script src="./app.js"></script>
+    <script src="../clients.js"></script>
+    <script src="../src/data/google-sheets.js"></script>
+    <script src="../src/order/summary.js"></script>
+    <script src="../src/order/message.js"></script>
+    <script src="../src/order/xubio-order.js"></script>
+    <script src="../src/controller/create-app-controller.js"></script>
+    <script src="../src/config/client.js"></script>
+    <script src="../src/state/create-app-state.js"></script>
+    <script src="../src/ui/dom-elements.js"></script>
+    <script src="../src/bootstrap/start-app.js"></script>
+    <script src="../app.js?v=20261008-organizacion"></script>
   </body>
 </html>

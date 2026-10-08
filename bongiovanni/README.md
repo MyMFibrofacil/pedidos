@@ -39,7 +39,7 @@ reales, con los precios unitarios de la hoja. Como en los otros catálogos por
 precio, se usa el producto Xubio `Particular` y se conserva la descripción.
 
 La habilitación del cliente también debe estar presente en el despliegue de
-`../google_apps_script/moreira_mailer/Code.gs`.
+`../google_apps_script/pedidos/Code.gs`.
 
 ## Impresión local
 

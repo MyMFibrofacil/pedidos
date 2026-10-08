@@ -1,271 +1,90 @@
-# Pedidos WhatsApp
+# Pedidos a medida
 
-App web estatica para tomar pedidos por cliente y compartir el resultado por WhatsApp o mail, segun la configuracion activa.
+Aplicación web estática para tomar pedidos de Rivadavia, Moreira, Valeria Lotz,
+Alan Alfonsín y Bongiovanni. Las pantallas mantienen sus rutas públicas actuales
+y comparten la configuración, el estado, la lectura del catálogo y la lógica del
+pedido.
 
-Hoy el foco principal de este repo esta en `Rivadavia`, que usa Google Sheets como fuente de datos y genera el pedido final para WhatsApp.
-
-## Estructura
-
-- [index.html](./index.html): portada local con acceso a cada cliente.
-- [clients.js](./clients.js): configuracion por cliente.
-- [app.js](./app.js): logica compartida de carga, render, resumen y envio.
-- [rivadavia/index.html](./rivadavia/index.html): entrada directa para Rivadavia.
-- [moreira/index.html](./moreira/index.html): entrada directa para Moreira.
-- [valeria/index.html](./valeria/index.html): entrada directa para Valeria Lotz.
-- [alan_alfonsin/index.html](./alan_alfonsin/index.html): entrada directa para Alan Alfonsín / Odin Led.
-- [google_apps_script/moreira_mailer/Code.gs](./google_apps_script/moreira_mailer/Code.gs): envio por mail usado por Moreira.
-
-## Como abrir la app
-
-No hay backend ni `main.py`. Es una app estatica.
-
-Opciones recomendadas:
-
-1. Abrir la subcarpeta del cliente, por ejemplo [rivadavia/index.html](./rivadavia/index.html), [moreira/index.html](./moreira/index.html), [valeria/index.html](./valeria/index.html) o [alan_alfonsin/index.html](./alan_alfonsin/index.html).
-2. Abrir [index.html](./index.html) si queres usar la portada selector.
-3. Mejor: servir la carpeta con `Live Server` o cualquier servidor estatico local.
-
-Ejemplo:
+## Mapa de carpetas
 
 ```text
-http://127.0.0.1:5500/rivadavia/index.html
+Pedidos_medida/
+├── index.html                    Portada para abrir las pantallas
+├── clients.js                    Configuración única de clientes
+├── app.js                        Punto de entrada de la aplicación
+├── controller.js                 Compatibilidad con páginas antiguas en caché
+├── src/
+│   ├── bootstrap/                 Inicio común de la aplicación
+│   ├── catalogs/                  Adaptadores para catálogos especiales
+│   ├── config/                    Detección y configuración activa
+│   ├── controller/                Coordinación de la pantalla
+│   ├── data/                      Lectura de Google Sheets
+│   ├── order/                     Resumen, mensaje y datos para Xubio
+│   ├── state/                     Estado de la pantalla
+│   └── ui/                        Referencias a elementos HTML
+├── rivadavia/                     Pantalla y documentación de Rivadavia
+├── moreira/                       Pantalla y recursos de Moreira
+├── valeria/                       Pantalla de Valeria Lotz
+├── alan_alfonsin/                 Pantalla de Alan Alfonsín
+├── bongiovanni/                   Pantalla y estilos de Bongiovanni
+├── google_apps_script/pedidos/    Fuente del correo y la integración Xubio
+├── impresion_presupuestos/        Servicio Python de impresión
+├── google_sheets/                 Acceso directo a la hoja activa
+└── tests/                         Pruebas de catálogo, correo e impresión
 ```
 
-## Deteccion de cliente
+Las pantallas usan estos enlaces:
 
-La app detecta el cliente activo en este orden:
+- `/rivadavia/`
+- `/moreira/`
+- `/valeria/`
+- `/alan_alfonsin/`
+- `/bongiovanni/`
 
-1. `window.APP_CLIENT_KEY`
-2. querystring (`?client=` o `?cliente=`)
-3. ultimo segmento de la URL
-4. fallback a `rivadavia`
+## Responsabilidad de cada módulo
 
-Las subrutas ya fijan el cliente desde su `index.html`.
+- `clients.js` define hojas, identificadores, textos y modo de envío de cada cliente.
+- `src/data/google-sheets.js` obtiene datos de la pestaña configurada.
+- `src/catalogs/` adapta formatos de catálogo particulares, como las tandas de Bongiovanni.
+- `src/order/` calcula el resumen y prepara el mensaje y las unidades que recibe Xubio.
+- `src/controller/create-app-controller.js` coordina cantidades, eventos y presentación.
+- `src/bootstrap/start-app.js` crea contexto, estado y pantalla para el cliente activo.
+- `google_apps_script/pedidos/` contiene el código fuente que se publica manualmente en Apps Script.
+- `impresion_presupuestos/` consulta avisos internos, descarga el PDF y lo envía a la impresora.
 
-## Configuracion por cliente
+La hoja activa de catálogo es **Lista Precios a Medida**, configurada por su ID en
+`clients.js`. Los accesos directos antiguos por cliente no se usan como fuente de
+la aplicación.
 
-La configuracion vive en [clients.js](./clients.js).
+## Abrir localmente
 
-### Rivadavia
+Desde esta carpeta, iniciar un servidor estático y abrir la ruta del cliente. Por
+ejemplo, con Python:
 
-- `sheetId`: origen de datos en Google Sheets
-- `sheetGid`: hoja a leer
-- `thicknessMeta`:
-  - `3` => `3 mm`
-  - `15` => `15 mm`
-- `sendMode`: WhatsApp
-
-### Moreira
-
-- usa otro `sheetId`
-- trabaja con `kits`, `individuales` y `letras`
-- resume por valor
-- envia por mail a traves de Apps Script
-
-### Valeria Lotz
-
-- usa la pestaña `Catálogo App` de su Google Sheet como catálogo técnico.
-- muestra secciones y categorias desplegables para que el cliente cargue cantidades con controles `+` y `-`.
-- calcula el total en pesos y prepara el pedido para WhatsApp.
-- la hoja debe permanecer disponible como **lector mediante enlace** para que el catalogo pueda cargarse desde la app publicada.
-
-Columnas usadas en `Catálogo App`:
-
-- `Sección`
-- `Categoría`
-- `Producto`
-- `Modelo`
-- `Precio`
-- `Tipo`
-
-La columna opcional `Activo` permite ocultar un producto con los valores `No`, `False` o `0`.
-
-## Modelo de datos actual de Rivadavia
-
-La hoja de Rivadavia se lee desde Google Sheets y hoy la app soporta dos formatos:
-
-### Formato recomendado
-
-Separar la placa en su propia columna.
-
-Columnas esperadas:
-
-- `Familia`
-- `Producto`
-- `placas`
-- `espesor`
-- `tipo`
-- `placa`
-
-Tambien se aceptan estos nombres equivalentes para la columna de placa:
-
-- `placa_corte`
-- `placa de corte`
-- `medida_placa`
-- `medida de placa`
-
-### Formato viejo
-
-Si no existe columna de placa, la app intenta inferirla desde `Familia` con formato:
-
-```text
-GL15 - 260x183
-1224 - 282x183
+```powershell
+python -m http.server 8765
 ```
 
-En ese caso:
+Luego abrir `http://127.0.0.1:8765/bongiovanni/` (o cambiar por otra ruta).
+También se puede usar Live Server.
 
-- familia base: `GL15`
-- placa: `260x183`
+## Comprobaciones
 
-## Tipos de fila en Rivadavia
-
-### `grupo`
-
-Representa una familia compuesta por varios graficos/productos que se piden en bloque.
-
-#### Grupo con una sola placa
-
-Ejemplo conceptual:
-
-```text
-GL15
-placa: 260x183
+```powershell
+node --test tests/bongiovanni.test.js tests/pedidos-mailer.test.js
+python -m unittest tests.test_impresion_presupuestos -v
 ```
 
-Comportamiento:
+## Publicación y cambios
 
-- la familia sigue cargandose con una sola cantidad
-- la UI muestra `Placa de referencia: 260x183`
-- el detalle interno multiplica todos los graficos por la cantidad elegida
-- WhatsApp sale con formato:
+GitHub Pages sirve estas mismas carpetas; no hay compilación ni `main.py` para
+la aplicación web. Después de cambiar HTML o JavaScript, conservar las rutas de
+los clientes y validar los cinco catálogos.
 
-```text
-GL15
-- Placa 260x183 (1 copia)
-  - Grafico 1: 50 placas
-  - Grafico 2: 34 placas
-```
+Los cambios de correo y presupuesto requieren copiar los archivos de
+`google_apps_script/pedidos/` al proyecto Apps Script y actualizar su despliegue.
+Los cambios del servicio de impresión afectan la tarea de Windows
+`Pedidos Medida - Imprimir Presupuestos`.
 
-#### Grupo con varias placas
-
-Ejemplo conceptual:
-
-```text
-1224
-placas disponibles: 282x183, 275x183
-```
-
-Comportamiento:
-
-- la familia aparece una sola vez
-- cada placa aparece como sub-bloque colapsado
-- la cantidad se carga por placa, no por grafico
-- los graficos internos se calculan como multiplo fijo de esa placa
-- no se pueden mezclar cantidades inconsistentes por grafico
-
-Ejemplo:
-
-- `Placa 282x183`, cantidad `2`
-- `Grafico 1: 54 x 2 = 108`
-- `Grafico 2: 18 x 2 = 36`
-
-WhatsApp sale con formato:
-
-```text
-1224
-- Placa 282x183 (2 copias)
-  - Grafico 1: 108 placas
-  - Grafico 2: 36 placas
-```
-
-### `individual`
-
-Representa productos que no se manejan como grupo cerrado.
-
-Comportamiento:
-
-- todos se agrupan visualmente bajo la familia `Individuales`
-- cada producto se carga por separado
-- si existe placa asociada, se muestra al lado del nombre del producto
-
-Ejemplos visibles:
-
-- `Cajones - 260x183`
-- `Esquema 16P - 260x183`
-
-WhatsApp sale con formato:
-
-```text
-*3mm*
-Individuales
-- Cajones - 260x183: 50 placas
-- Esquema 16P - 260x183: 45 placas
-```
-
-## Como construye la UI Rivadavia
-
-Flujo general en [app.js](./app.js):
-
-1. Detecta cliente activo.
-2. Lee Google Sheets.
-3. Agrupa por espesor.
-4. Dentro de cada espesor:
-   - agrupa familias `grupo`
-   - detecta si tienen una sola placa o varias
-   - agrupa `individual` bajo `Individuales`
-5. Renderiza:
-   - tabs por espesor
-   - cards de familia
-   - detalle/resumen fijo abajo
-6. Genera el texto final y lo abre en WhatsApp.
-
-## Formato del mensaje de WhatsApp en Rivadavia
-
-El mensaje final intenta respetar esta jerarquia:
-
-1. espesor
-2. familia
-3. placa
-4. detalle de graficos o productos
-5. resumen final
-
-Ejemplo simplificado:
-
-```text
-*3mm*
-GL15
-- Placa 260x183 (1 copia)
-  - Grafico 1: 50 placas
-  - Grafico 2: 34 placas
-
-Individuales
-- Cajones - 260x183: 50 placas
-
-RESUMEN FINAL
-*Total 3 mm: 134 placas*
-*Total general: 134 items*
-```
-
-Nota: el texto de `Total general` sigue saliendo como `items` porque esa etiqueta general todavia usa el comportamiento compartido actual.
-
-## Agregar un nuevo cliente
-
-1. Agregar una nueva entrada en [clients.js](./clients.js).
-2. Crear su carpeta, por ejemplo `nuevo_cliente/`.
-3. Copiar un `index.html` lanzador como [rivadavia/index.html](./rivadavia/index.html).
-4. Ajustar:
-   - `window.APP_CLIENT_KEY`
-   - `window.APP_ASSET_PREFIX`
-   - `sheetId`, `sheetGid` y textos de interfaz en `clients.js`
-
-## GitHub Pages
-
-Con esta estructura se pueden publicar rutas como:
-
-- `/Pedidos_wpp/rivadavia/`
-- `/Pedidos_wpp/moreira/`
-- `/Pedidos_wpp/valeria/`
-- `/pedidos/alan_alfonsin/`
-
-Cada subruta usa la misma logica compartida, pero carga solo la configuracion del cliente correspondiente.
+Las especificaciones del formato de Rivadavia están en [rivadavia/README.md](./rivadavia/README.md).
+La pantalla de Bongiovanni está documentada en [bongiovanni/README.md](./bongiovanni/README.md).
