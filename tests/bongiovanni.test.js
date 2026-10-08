@@ -32,13 +32,14 @@ function createEnvironment(clientKey, data) {
     "src/catalogs/bongiovanni.js", "src/data/google-sheets.js",
     "src/order/summary.js", "src/order/message.js", "src/order/xubio-order.js",
     "src/ui/catalog-family-renderer.js",
+    "src/ui/order-summary-renderer.js",
   ]) {
     vm.runInContext(source(file), context);
   }
   // Expone funciones internas solamente en memoria para verificar el código real.
   const controllerSource = source("src/controller/create-app-controller.js").replace(
     /return \{\s*init,\s*\};/,
-    "return { init, loadCatalogFromSheet, summary, buildWhatsAppText, buildXubioOrderData, submitEmailForm, renderQuickStepButtons, renderPriceListSection, renderFamilies, bindEvents, clearCurrentOrder, setCatalog: value => { catalog = value; } };"
+    "return { init, loadCatalogFromSheet, summary, buildWhatsAppText, buildXubioOrderData, submitEmailForm, renderQuickStepButtons, renderPriceListSection, renderFamilies, renderSummary, bindEvents, clearCurrentOrder, setCatalog: value => { catalog = value; } };"
   );
   vm.runInContext(controllerSource, context);
   const api = context.window.PedidosApp;
@@ -150,4 +151,22 @@ test("Moreira, Valeria, Alan y Rivadavia conservan sus cálculos y selectores", 
     }
     assert.match(controller.renderQuickStepButtons(), /data-letter-step/);
   }
+});
+
+test("el resumen presenta totales y detalle a partir del pedido calculado", async () => {
+  const { controller, state, html } = createEnvironment("bongiovanni", batchData());
+  html.summaryTotals = { innerHTML: "" };
+  html.summaryDetailsList = { innerHTML: "" };
+  html.summaryDetailsPanel = { classList: { toggle() {} } };
+  html.summaryChevron = { style: {} };
+  html.sendButton = { disabled: true };
+  const catalog = await controller.loadCatalogFromSheet();
+  controller.setCatalog(catalog);
+  state.productQuantities[catalog[0].products[0].id] = 2;
+
+  controller.renderSummary();
+
+  assert.match(html.summaryTotals.innerHTML, /Total general:/);
+  assert.match(html.summaryDetailsList.innerHTML, /Cama Emi/);
+  assert.equal(html.sendButton.disabled, false);
 });
