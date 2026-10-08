@@ -31,6 +31,7 @@ const letterState = state.letterState;
 const materialQuantities = state.materialQuantities;
 const productQuantities = state.productQuantities;
 const variantQuantities = state.variantQuantities;
+const catalogAdapter = window.PedidosApp?.catalogAdapters?.[clientConfig?.catalogMode];
 let currentOrderId = createOrderId();
 let categoryHomeOpen = Boolean(clientConfig?.categoryHome);
 let activeCategoryId = "";
@@ -676,6 +677,12 @@ function toggleKitGroup(groupId) {
 }
 
 function renderTabs() {
+  const hideTabs = Boolean(clientConfig?.hideSingleSectionTab && !clientConfig?.categoryHome && getAvailableSections().length <= 1);
+  html.tabs.classList.toggle("hidden", hideTabs);
+  if (hideTabs) {
+    html.tabs.innerHTML = "";
+    return;
+  }
   const categoryHomeTab = clientConfig?.categoryHome
     ? `
         <button
@@ -1018,14 +1025,15 @@ function renderValueProductRow(product, metaLabel = "", displayName = "") {
   const qty = getProductQty(product.id);
   const subtotal = qty * normalizePrice(product.unitPrice);
   const title = displayName || product.name;
+  const productDetails = catalogAdapter?.describeProduct?.(product) || metaLabel;
 
   return `
     <div class="p-4 flex items-start justify-between gap-3">
       <div class="min-w-0 flex-1">
         <p class="text-sm font-semibold text-slate-800 break-words">${escapeHtml(title)}</p>
         ${
-          metaLabel
-            ? `<p class="mt-1 text-xs text-slate-500">${escapeHtml(metaLabel)}</p>`
+          productDetails
+            ? `<p class="mt-1 text-xs text-slate-500">${escapeHtml(productDetails)}</p>`
             : ""
         }
         <p class="mt-1 text-xs text-slate-500">${escapeHtml(formatCurrency(product.unitPrice))}</p>
@@ -1395,6 +1403,7 @@ function renderFamilyCard(family) {
 }
 
 function renderQuickStepButtons() {
+  if (clientConfig?.hideQuantitySteps) return "";
   return lettersConfig.quickSteps
     .map((step) => {
       const active = step === letterState.step;
@@ -1598,22 +1607,20 @@ function renderPriceListSection(section) {
 
   html.families.innerHTML = `
     <section class="space-y-3">
-      <div class="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
+      ${clientConfig?.orderClearOnly ? `<button type="button" data-order-clear class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700">Limpiar pedido</button>` : `<div class="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
         <div class="flex items-center justify-between gap-3">
           <div>
             <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Categoria</p>
             <p class="mt-1 text-sm font-semibold text-slate-800">${escapeHtml(selectedCategory?.name || section.name)}</p>
           </div>
-          <p class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-            Paso ${escapeHtml(letterState.step)}
-          </p>
+          ${clientConfig?.hideQuantitySteps ? "" : `<p class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">Paso ${escapeHtml(letterState.step)}</p>`}
         </div>
         ${
           selectedCategory && clientConfig?.categoryHome
             ? `<button type="button" data-category-home class="flex items-center gap-1 text-sm font-bold text-primary"><span class="material-symbols-outlined text-base">arrow_back</span>Ver todas las categorías</button>`
             : ""
         }
-        <div class="flex gap-2 overflow-x-auto scrollbar-hide">${renderQuickStepButtons()}</div>
+        ${clientConfig?.hideQuantitySteps ? "" : `<div class="flex gap-2 overflow-x-auto scrollbar-hide">${renderQuickStepButtons()}</div>`}
         <button
           type="button"
           data-category-clear="active"
@@ -1621,7 +1628,7 @@ function renderPriceListSection(section) {
         >
           Limpiar categoria
         </button>
-      </div>
+      </div>`}
       <div class="space-y-3">${categoryMarkup}</div>
     </section>
   `;
@@ -2081,7 +2088,7 @@ function renderSummary() {
                       return `
                         <div class="rounded-xl border border-slate-200 bg-white px-3 py-3">
                           <p class="text-sm font-semibold text-slate-800">${escapeHtml(product.name)}</p>
-                          <p class="mt-1 text-xs text-slate-500">- Cantidad: ${product.qty}</p>
+                          <p class="mt-1 text-xs text-slate-500">${escapeHtml(catalogAdapter?.describeSelection?.(product, product.qty) || `- Cantidad: ${product.qty}`)}</p>
                         </div>
                       `;
                     })
@@ -2291,7 +2298,7 @@ function buildWhatsAppText() {
     if (section.type === "price-list") {
       section.products.forEach((product) => {
         lines.push(`${sanitizeMessageText(product.name)}`);
-        lines.push(`- Cantidad: ${product.qty}`);
+        lines.push(...(catalogAdapter?.buildOrderLines?.(product, product.qty) || [`- Cantidad: ${product.qty}`]));
       });
       return;
     }
@@ -2375,6 +2382,12 @@ function buildXubioOrderData() {
 
     if (section.type === "price-list") {
       section.products.forEach((product) => {
+        if (catalogAdapter?.buildXubioItems) {
+          catalogAdapter.buildXubioItems(product, getProductQty(product.id)).forEach((item) => {
+            addItem(item.descripcion, item.cantidad, item.precio);
+          });
+          return;
+        }
         const model = String(product.model || "").trim();
         addItem(
           [section.name, product.name, model].filter(Boolean).join(" - "),
@@ -2622,6 +2635,11 @@ function bindEvents() {
   });
 
   html.families.addEventListener("click", (event) => {
+    if (event.target.closest("[data-order-clear]")) {
+      clearCurrentOrder();
+      setStatus("Se limpió el pedido.", "success");
+      return;
+    }
     const categoryHomeButton = event.target.closest("[data-category-home]");
     if (categoryHomeButton) {
       categoryHomeOpen = true;
@@ -2888,6 +2906,11 @@ async function loadCatalogFromSheet() {
     }
   };
 
+  if (catalogAdapter?.createCatalog) {
+    const sourceData = await loadSheetData(clientConfig.catalogSheetGid || clientConfig.sheetGid);
+    return catalogAdapter.createCatalog(sourceData);
+  }
+
   if (clientConfig?.catalogMode === "moreira-categories") {
     const categoriesData = await loadSheetData(clientConfig.catalogSheetGid || clientConfig.sheetGid);
     const rows = categoriesData?.table?.rows || [];
@@ -3035,9 +3058,7 @@ async function loadCatalogFromSheet() {
 
       if (section === "letras") {
         const size = productName.match(/\b(22|27|33)\b/)?.[1];
-        if (size && lettersConfig.sizes.includes(size)) {
-          letterState.prices[size] = unitPrice;
-        }
+        if (size && lettersConfig.sizes.includes(size)) letterState.prices[size] = unitPrice;
         return;
       }
 
@@ -3045,87 +3066,35 @@ async function loadCatalogFromSheet() {
         const kitName = /^kit\s/i.test(category) ? category : `Kit ${category}`;
         const familyId = `kit-${slugify(kitName)}`;
         if (!kitsMap.has(familyId)) {
-          kitsMap.set(familyId, {
-            id: familyId,
-            name: kitName,
-            type: "kit",
-            open: false,
-            products: [],
-            materialGroups: [],
-            sortIndex: rowIndex,
-            basePrice: 0,
-          });
+          kitsMap.set(familyId, { id: familyId, name: kitName, type: "kit", open: false, products: [], materialGroups: [], sortIndex: rowIndex, basePrice: 0 });
         }
-
         const family = kitsMap.get(familyId);
-        family.products.push({
-          id: `prd-${familyId}-${slugify(material)}-${slugify(productName)}-${rowIndex}`,
-          name: `${kitName} ${material} ${productName}`,
-          material,
-          object: productName,
-          unitPrice,
-          sortIndex: rowIndex,
-        });
+        family.products.push({ id: `prd-${familyId}-${slugify(material)}-${slugify(productName)}-${rowIndex}`, name: `${kitName} ${material} ${productName}`, material, object: productName, unitPrice, sortIndex: rowIndex });
         family.basePrice += unitPrice;
         return;
       }
 
       if (section === "individuales" && material) {
-        individuals.push({
-          id: `prd-individual-${slugify(productName)}-${slugify(material)}-${rowIndex}`,
-          name: `${productName} ${material}`,
-          object: productName,
-          material,
-          unitPrice,
-          sortIndex: rowIndex,
-        });
+        individuals.push({ id: `prd-individual-${slugify(productName)}-${slugify(material)}-${rowIndex}`, name: `${productName} ${material}`, object: productName, material, unitPrice, sortIndex: rowIndex });
       }
     });
 
     return [
       {
-        id: "kits",
-        name: "Kits",
-        summaryLabel: "Kits",
-        icon: "deployed_code",
-        type: "kits",
-        families: Array.from(kitsMap.values())
-          .map((family) => ({
-            ...family,
-            products: family.products.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-            materialGroups: groupProductsBy(family.products, "material").map((group) => ({
-              id: `mat-${family.id}-${slugify(group.label)}`,
-              name: group.label,
-              basePrice: group.items.reduce((sum, item) => sum + item.unitPrice, 0),
-              products: group.items.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-            })),
-          }))
-          .sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
+        id: "kits", name: "Kits", summaryLabel: "Kits", icon: "deployed_code", type: "kits",
+        families: Array.from(kitsMap.values()).map((family) => ({
+          ...family,
+          products: family.products.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
+          materialGroups: groupProductsBy(family.products, "material").map((group) => ({
+            id: `mat-${family.id}-${slugify(group.label)}`, name: group.label,
+            basePrice: group.items.reduce((sum, item) => sum + item.unitPrice, 0),
+            products: group.items.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
+          })),
+        })).sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
       },
-      {
-        id: "individuales",
-        name: "Individuales",
-        summaryLabel: "Individuales",
-        icon: "inventory_2",
-        type: "price-list",
-        families: [],
-        products: individuals.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)),
-      },
-      {
-        id: "letras",
-        name: "Letras",
-        summaryLabel: "Letras",
-        icon: "title",
-        type: "letters",
-        families: [],
-        products: [],
-      },
-    ].filter(
-      (section) =>
-        section.type === "letters" ||
-        section.families?.length > 0 ||
-        section.products?.length > 0
-    );
+      { id: "individuales", name: "Individuales", summaryLabel: "Individuales", icon: "inventory_2", type: "price-list", families: [], products: individuals.sort((a, b) => a.sortIndex - b.sortIndex || compareText(a.name, b.name)) },
+      { id: "letras", name: "Letras", summaryLabel: "Letras", icon: "title", type: "letters", families: [], products: [] },
+    ].filter((section) => section.type === "letters" || section.families?.length > 0 || section.products?.length > 0);
   }
 
   if (clientConfig?.catalogMode === "categorized-price-list") {
