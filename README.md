@@ -1,7 +1,7 @@
 # Pedidos a medida
 
 Aplicación web estática para tomar pedidos de Rivadavia, Moreira, Valeria Lotz,
-Alan Alfonsín y Bongiovanni. Las pantallas mantienen sus rutas públicas actuales
+Benedetto, Alan Alfonsín y Bongiovanni. Las pantallas mantienen sus rutas públicas actuales
 y comparten la configuración, el estado, la lectura del catálogo y la lógica del
 pedido.
 
@@ -28,6 +28,7 @@ Pedidos_medida/
 ├── rivadavia/                     Pantalla y documentación de Rivadavia
 ├── moreira/                       Pantalla y recursos de Moreira
 ├── valeria/                       Pantalla de Valeria Lotz
+├── benedetto/                     Pantalla de Benedetto
 ├── alan_alfonsin/                 Pantalla de Alan Alfonsín
 ├── bongiovanni/                   Pantalla y estilos de Bongiovanni
 ├── google_apps_script/pedidos/    Fuente del correo y la integración Xubio
@@ -41,6 +42,7 @@ Las pantallas usan estos enlaces:
 - `/rivadavia/`
 - `/moreira/`
 - `/valeria/`
+- `/benedetto/`
 - `/alan_alfonsin/`
 - `/bongiovanni/`
 

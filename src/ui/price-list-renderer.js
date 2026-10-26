@@ -64,7 +64,7 @@
   
     html.families.innerHTML = `
       <section class="space-y-3">
-        ${clientConfig?.orderClearOnly ? `<button type="button" data-order-clear class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700">Limpiar pedido</button>` : `<div class="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
+        ${clientConfig?.hideCategoryControls ? "" : clientConfig?.orderClearOnly ? `<button type="button" data-order-clear class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700">Limpiar pedido</button>` : `<div class="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
           <div class="flex items-center justify-between gap-3">
             <div>
               <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Categoria</p>
