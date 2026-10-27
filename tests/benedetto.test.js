@@ -13,10 +13,11 @@ test("Benedetto tiene una pantalla conectada a su pestaña categorizada", () => 
   assert.equal(config.sheetGid, "1170010108");
   assert.equal(config.catalogSheetGid, "1170010108");
   assert.equal(config.catalogMode, "categorized-price-list");
-  assert.equal(config.categoryHome, true);
+  assert.equal(config.categoryHome, false);
   assert.equal(config.hideCategoryControls, true);
   assert.equal(config.sendXubioOrder, true);
   assert.equal(config.xubio.clienteId, 13366852);
+  assert.equal(config.productPreviews["casamiento-abuelos-abuela"], "previews/abuela.png");
 
   const page = fs.readFileSync(path.join(__dirname, "../benedetto/index.html"), "utf8");
   assert.match(page, /window\.APP_CLIENT_KEY = "benedetto"/);

@@ -187,6 +187,7 @@ const {
 } = familyMetrics;
 
 const catalogFamilyRenderer = window.PedidosApp.createCatalogFamilyRenderer({
+  clientConfig,
   escapeHtml,
   slugify,
   compareText,

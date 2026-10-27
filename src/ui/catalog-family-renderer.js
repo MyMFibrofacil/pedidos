@@ -2,6 +2,7 @@
 (() => {
   function createCatalogFamilyRenderer(dependencies) {
     const {
+      clientConfig,
       escapeHtml, slugify, compareText, formatCurrency, normalizePrice,
       getFamilyQty, getVariantQty, getProductQty, getMaterialQty,
       getFamilyProducts, getFamilyVariants, hasPlateVariants,
@@ -244,10 +245,17 @@
     const subtotal = qty * normalizePrice(product.unitPrice);
     const title = displayName || product.name;
     const productDetails = catalogAdapter?.describeProduct?.(product) || metaLabel;
+    const previewPath = String(clientConfig?.productPreviews?.[product.previewKey] || "").trim();
   
     return `
       <div class="p-4 flex items-start justify-between gap-3">
-        <div class="min-w-0 flex-1">
+        <div class="flex min-w-0 flex-1 items-center gap-3">
+          ${
+            previewPath
+              ? `<img src="${escapeHtml(previewPath)}" alt="Vista previa de ${escapeHtml(title)}" loading="lazy" class="size-16 shrink-0 rounded-lg border border-slate-200 bg-white object-contain p-1" onerror="this.remove()" />`
+              : ""
+          }
+          <div class="min-w-0 flex-1">
           <p class="text-sm font-semibold text-slate-800 break-words">${escapeHtml(title)}</p>
           ${
             productDetails
@@ -260,6 +268,7 @@
               ? `<p class="mt-1 text-xs font-semibold text-primary">${escapeHtml(formatCurrency(subtotal))}</p>`
               : ""
           }
+          </div>
         </div>
         <div class="flex shrink-0 items-center bg-slate-100 rounded-lg p-1">
           <button

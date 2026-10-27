@@ -58,6 +58,7 @@
         id: `prd-${sectionId}-${slugify(categoryLabel)}-${slugify(productName)}-${slugify(model)}-${rowIndex}`,
         name: productName,
         model,
+        previewKey: slugify(`${sectionName}-${categoryLabel}-${productName}`),
         unitPrice,
         sortIndex: rowIndex,
       };
