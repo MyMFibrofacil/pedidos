@@ -252,7 +252,7 @@
         <div class="flex min-w-0 flex-1 items-center gap-3">
           ${
             previewPath
-              ? `<img src="${escapeHtml(previewPath)}" alt="Vista previa de ${escapeHtml(title)}" loading="lazy" class="size-16 shrink-0 rounded-lg border border-slate-200 bg-white object-contain p-1" onerror="this.remove()" />`
+              ? `<button type="button" data-preview-open data-preview-src="${escapeHtml(previewPath)}" data-preview-title="${escapeHtml(title)}" class="size-16 shrink-0 rounded-lg border border-slate-200 bg-white p-1 shadow-sm transition hover:border-primary hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40" aria-label="Ver ${escapeHtml(title)} en grande"><img src="${escapeHtml(previewPath)}" alt="Vista previa de ${escapeHtml(title)}" loading="lazy" class="size-full object-contain" onerror="this.closest('button').remove()" /></button>`
               : ""
           }
           <div class="min-w-0 flex-1">

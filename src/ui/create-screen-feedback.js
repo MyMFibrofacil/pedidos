@@ -35,6 +35,22 @@
       document.body.classList.remove("overflow-hidden");
     }
 
+    function openPreviewModal(source, title) {
+      if (!html.previewModal || !html.previewImage) return;
+      html.previewImage.src = source;
+      html.previewImage.alt = `Vista ampliada de ${title || "modelo"}`;
+      if (html.previewCaption) html.previewCaption.textContent = title || "Vista previa";
+      html.previewModal.classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+    }
+
+    function closePreviewModal() {
+      if (!html.previewModal) return;
+      html.previewModal.classList.add("hidden");
+      if (html.previewImage) html.previewImage.removeAttribute("src");
+      document.body.classList.remove("overflow-hidden");
+    }
+
     function hideToast() {
       if (!html.toast) return;
       html.toast.classList.add("opacity-0", "-translate-y-3");
@@ -108,7 +124,7 @@
 
     return {
       applyClientUi, updateSearchVisibility, setFamiliesMessage,
-      openDesignsModal, closeDesignsModal, setStatus,
+      openDesignsModal, closeDesignsModal, openPreviewModal, closePreviewModal, setStatus,
       getRemainingScroll, hideScrollButton, showScrollButtonTemporarily,
     };
   }

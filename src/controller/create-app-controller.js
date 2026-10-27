@@ -152,6 +152,8 @@ const {
   setFamiliesMessage,
   openDesignsModal,
   closeDesignsModal,
+  openPreviewModal,
+  closePreviewModal,
   setStatus,
   getRemainingScroll,
   hideScrollButton,
@@ -570,6 +572,8 @@ function bindEvents() {
       },
       openDesigns: openDesignsModal,
       closeDesigns: closeDesignsModal,
+      openPreview: openPreviewModal,
+      closePreview: closePreviewModal,
       showScrollButton: showScrollButtonTemporarily,
       hideScrollButton,
       updateScrollButton: () => {

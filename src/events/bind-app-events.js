@@ -12,6 +12,11 @@
     });
 
     html.families.addEventListener("click", (event) => {
+      const preview = event.target.closest("[data-preview-open]");
+      if (preview) {
+        actions.openPreview(preview.dataset.previewSrc, preview.dataset.previewTitle);
+        return;
+      }
       if (event.target.closest("[data-order-clear]")) {
         actions.clearOrder();
         return;
@@ -102,8 +107,18 @@
         if (event.target === html.designsModal) actions.closeDesigns();
       });
     }
+    if (html.closePreview) html.closePreview.addEventListener("click", actions.closePreview);
+    if (html.previewModal) {
+      html.previewModal.addEventListener("click", (event) => {
+        if (event.target === html.previewModal) actions.closePreview();
+      });
+    }
 
     document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && html.previewModal && !html.previewModal.classList.contains("hidden")) {
+        actions.closePreview();
+        return;
+      }
       if (event.key === "Escape" && html.designsModal && !html.designsModal.classList.contains("hidden")) {
         actions.closeDesigns();
       }
