@@ -2,7 +2,7 @@ const DEFAULT_TO = "mymfibrofacil@gmail.com,mymfibrofacil.web@gmail.com";
 const DEFAULT_SUBJECT_PREFIX = "Moreira";
 const PRINT_NOTIFICATION_TO = "mymfibrofacil@gmail.com";
 const PRINT_SUBJECT_PREFIX = "[IMPRIMIR XUBIO]";
-const PRINTABLE_XUBIO_CLIENT_IDS = [5481719, 5482182, 5481712, 5482024];
+const PRINTABLE_XUBIO_CLIENT_IDS = [5481719, 5482182, 5481712, 5482024, 13366852];
 const FABRICAAPP_CLIENT_ID = 7756831;
 
 // Configuracion de Xubio. Los dos secretos se guardan solamente en Script
@@ -33,6 +33,7 @@ const XUBIO = {
     "5482182": { id: 5482182, name: "HORACIO MAXIMILIANO NERVI / Valeria Lotz" },
     "5481712": { id: 5481712, name: "ALAN JAVIER ALFONSIN" },
     "5482024": { id: 5482024, name: "MARIA VICTORIA BONGIOVANNI" },
+    "13366852": { id: 13366852, name: "DAIANA AYELEN BENEDETTO" },
   },
   clientsByKey: {
     rivadavia: "7756831",
@@ -40,6 +41,7 @@ const XUBIO = {
     valeria: "5482182",
     alan_alfonsin: "5481712",
     bongiovanni: "5482024",
+    benedetto: "13366852",
   },
 };
 

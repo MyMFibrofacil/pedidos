@@ -21,13 +21,14 @@ def make_notice(client_key: str = "5482024", customer: str = "Bongiovanni") -> b
 
 
 class PrintFlowTests(unittest.TestCase):
-    def test_acepta_cuatro_clientes_y_rechaza_rivadavia(self):
+    def test_acepta_cinco_clientes_y_rechaza_rivadavia(self):
         inbox = MagicMock()
         for client_id, customer in (
             ("5482024", "Bongiovanni"),
             ("5481719", "Moreira"),
             ("5482182", "Valeria Lotz"),
             ("5481712", "Pedido Alan Alfonsín"),
+            ("13366852", "Benedetto"),
         ):
             inbox.uid.return_value = ("OK", [(b"1 (BODY[] {100}", make_notice(client_id, customer))])
             job = mail.read_job(inbox, b"1")

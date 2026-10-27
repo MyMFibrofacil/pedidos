@@ -135,6 +135,7 @@ test("Moreira, Valeria y Alan imprimen y reciben copia; Rivadavia queda excluido
     ["moreira", 5481719, "Moreira - prueba simulada"],
     ["valeria", 5482182, "Valeria Lotz - prueba simulada"],
     ["alan_alfonsin", 5481712, "Pedido Alan Alfonsín - prueba simulada"],
+    ["benedetto", 13366852, "Benedetto - prueba simulada"],
     ["rivadavia", 7756831, "Rivadavia - prueba simulada"],
   ]) {
     const emails = [];
@@ -156,7 +157,7 @@ test("Moreira, Valeria y Alan imprimen y reciben copia; Rivadavia queda excluido
       },
     });
     loadAppsScriptModules(context);
-    if (key !== "rivadavia") properties.set(`PEDIDOS_COPIA_${clientId}`, `${key}@example.com`);
+    if (!["rivadavia", "benedetto"].includes(key)) properties.set(`PEDIDOS_COPIA_${clientId}`, `${key}@example.com`);
     context.getXubioToken = () => "test-token";
     context.xubioFetchJson = (url, token, method, payload) => {
       if (method === "get") {
@@ -188,8 +189,8 @@ test("Moreira, Valeria y Alan imprimen y reciben copia; Rivadavia queda excluido
       assert.equal(notices.length, 1);
       assert.equal(notices[0][0], "mymfibrofacil@gmail.com");
       assert.match(notices[0][2], new RegExp(`"clientKey":"${clientId}"`));
-      assert.equal(copies.length, 1);
-      assert.equal(copies[0][0], `${key}@example.com`);
+      assert.equal(copies.length, key === "benedetto" ? 0 : 1);
+      if (key !== "benedetto") assert.equal(copies[0][0], `${key}@example.com`);
     }
   }
 });

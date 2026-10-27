@@ -15,7 +15,8 @@ test("Benedetto tiene una pantalla conectada a su pestaña categorizada", () => 
   assert.equal(config.catalogMode, "categorized-price-list");
   assert.equal(config.categoryHome, true);
   assert.equal(config.hideCategoryControls, true);
-  assert.equal(config.sendXubioOrder, false);
+  assert.equal(config.sendXubioOrder, true);
+  assert.equal(config.xubio.clienteId, 13366852);
 
   const page = fs.readFileSync(path.join(__dirname, "../benedetto/index.html"), "utf8");
   assert.match(page, /window\.APP_CLIENT_KEY = "benedetto"/);
