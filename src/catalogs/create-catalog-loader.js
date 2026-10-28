@@ -19,8 +19,6 @@
       return catalogAdapter.createCatalog(sourceData, {
         normalizePrice, normalizeSheetLabel, slugify, compareText, groupProductsBy,
         lettersConfig, letterState,
-        sectionNames: clientConfig.sectionNames,
-        categoriesBySection: clientConfig.categoriesBySection,
       });
     }
   

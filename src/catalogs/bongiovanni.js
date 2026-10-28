@@ -1,7 +1,17 @@
 /** Interpreta las tandas de Bongiovanni y conserva todo su contenido. */
 (() => {
   function normalizeHeader(value) {
-    return String(value || "").trim().toLowerCase();
+    return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function slugify(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "sin-nombre";
   }
 
   function parseNumber(value, rowNumber, label) {
@@ -15,31 +25,38 @@
     return number;
   }
 
-  /** Agrupa los productos por sección; cada cantidad representa una tanda. */
-  function createCatalog(data, dependencies = {}) {
+  /** Agrupa dinámicamente por los nombres de sección y categoría de la hoja. */
+  function createCatalog(data) {
     const table = data?.table;
     const columns = table?.cols || [];
     const indexes = Object.fromEntries(columns.map((column, index) => [normalizeHeader(column.label), index]));
     for (const label of ["producto", "salen", "tanda", "$ unitario"]) {
       if (indexes[label] === undefined) throw new Error(`Bongiovanni: falta la columna ${label}.`);
     }
-    const sectionNames = dependencies.sectionNames?.length
-      ? dependencies.sectionNames
-      : ["Muebles", "Herrajes"];
-    const categoriesBySection = dependencies.categoriesBySection || {
-      Muebles: ["Emi"],
-      Herrajes: ["Tarugos", "Minifix"],
+    const hasSectionColumn = indexes["sección"] !== undefined;
+    const hasCategoryColumn = indexes["categoría"] !== undefined;
+    const sections = new Map();
+    const getOrCreateSection = (name, sortIndex) => {
+      const key = normalizeHeader(name);
+      if (!sections.has(key)) {
+        const id = `section-${slugify(name)}`;
+        sections.set(key, {
+          id, name, summaryLabel: name, icon: "inventory_2", type: "price-list",
+          families: [], products: [], categories: [], categoriesMap: new Map(), sortIndex,
+        });
+      }
+      return sections.get(key);
     };
-    const sections = new Map(sectionNames.map((name) => {
-      const id = `section-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
-      const categories = (categoriesBySection[name] || []).map((categoryName, sortIndex) => ({
-        id: `${id}-category-${categoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-        name: categoryName,
-        products: [],
-        sortIndex,
-      }));
-      return [id, { id, name, summaryLabel: name, icon: "inventory_2", type: "price-list", families: [], products: [], categories }];
-    }));
+    const getOrCreateCategory = (section, name, sortIndex) => {
+      const key = normalizeHeader(name);
+      if (!section.categoriesMap.has(key)) {
+        section.categoriesMap.set(key, {
+          id: `${section.id}-category-${slugify(name)}`,
+          name, products: [], sortIndex,
+        });
+      }
+      return section.categoriesMap.get(key);
+    };
     let currentProduct;
     (table.rows || []).forEach((row, rowIndex) => {
       const cells = row.c || [];
@@ -51,23 +68,16 @@
       if (!name && !outputName) return;
       const rowNumber = rowIndex + 2;
       if (name) {
-        const selectedSection = sectionName || sectionNames[0];
-        const sectionId = `section-${selectedSection.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
-        const section = sections.get(sectionId);
-        if (!section || section.name !== selectedSection) {
-          throw new Error(`Bongiovanni: sección inválida en la fila ${rowNumber}.`);
-        }
-        const availableCategories = section.categories;
-        const selectedCategoryName = categoryName || (availableCategories.length === 1 ? availableCategories[0].name : "");
-        const selectedCategory = availableCategories.find((category) => category.name === selectedCategoryName);
-        if (!selectedCategory) {
-          const issue = selectedCategoryName ? "categoría no válida" : "falta Categoría";
-          throw new Error(`Bongiovanni: ${issue} para la sección ${selectedSection} en la fila ${rowNumber}.`);
-        }
+        const selectedSection = sectionName || (hasSectionColumn ? "" : "Tandas");
+        const selectedCategoryName = categoryName || (hasCategoryColumn ? "" : "Otros");
+        if (!selectedSection) throw new Error(`Bongiovanni: falta Sección en la fila ${rowNumber}.`);
+        if (!selectedCategoryName) throw new Error(`Bongiovanni: falta Categoría en la fila ${rowNumber}.`);
+        const section = getOrCreateSection(selectedSection, rowIndex);
+        const selectedCategory = getOrCreateCategory(section, selectedCategoryName, rowIndex);
         currentProduct = {
           id: `bongiovanni-${rowIndex}`,
           name,
-          sectionId,
+          sectionId: section.id,
           categoryId: selectedCategory.id,
           unitPrice: 0,
           deliveryItems: [],
@@ -94,7 +104,15 @@
       currentProduct.deliveryItems.push({ name: outputName, quantity, unitPrice: price });
       currentProduct.unitPrice = Math.round((currentProduct.unitPrice + subtotal) * 100) / 100;
     });
-    return Array.from(sections.values());
+    return Array.from(sections.values())
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .map((section) => {
+        const { categoriesMap, ...result } = section;
+        return {
+          ...result,
+          categories: Array.from(categoriesMap.values()).sort((a, b) => a.sortIndex - b.sortIndex),
+        };
+      });
   }
 
   function describeProduct(product) {
