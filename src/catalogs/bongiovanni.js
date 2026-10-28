@@ -15,31 +15,65 @@
     return number;
   }
 
-  /** Devuelve una sección de productos; cada cantidad representa una tanda. */
-  function createCatalog(data) {
+  /** Agrupa los productos por sección; cada cantidad representa una tanda. */
+  function createCatalog(data, dependencies = {}) {
     const table = data?.table;
     const columns = table?.cols || [];
     const indexes = Object.fromEntries(columns.map((column, index) => [normalizeHeader(column.label), index]));
     for (const label of ["producto", "salen", "tanda", "$ unitario"]) {
       if (indexes[label] === undefined) throw new Error(`Bongiovanni: falta la columna ${label}.`);
     }
-    const products = [];
+    const sectionNames = dependencies.sectionNames?.length
+      ? dependencies.sectionNames
+      : ["Muebles", "Herrajes"];
+    const categoriesBySection = dependencies.categoriesBySection || {
+      Muebles: ["Emi"],
+      Herrajes: ["Tarugos", "Minifix"],
+    };
+    const sections = new Map(sectionNames.map((name) => {
+      const id = `section-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      const categories = (categoriesBySection[name] || []).map((categoryName, sortIndex) => ({
+        id: `${id}-category-${categoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+        name: categoryName,
+        products: [],
+        sortIndex,
+      }));
+      return [id, { id, name, summaryLabel: name, icon: "inventory_2", type: "price-list", families: [], products: [], categories }];
+    }));
     let currentProduct;
     (table.rows || []).forEach((row, rowIndex) => {
       const cells = row.c || [];
       const cell = (label) => cells[indexes[label]]?.v ?? "";
       const name = String(cell("producto")).trim();
       const outputName = String(cell("salen")).trim();
+      const sectionName = String(cell("sección")).trim();
+      const categoryName = String(cell("categoría")).trim();
       if (!name && !outputName) return;
       const rowNumber = rowIndex + 2;
       if (name) {
+        const selectedSection = sectionName || sectionNames[0];
+        const sectionId = `section-${selectedSection.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+        const section = sections.get(sectionId);
+        if (!section || section.name !== selectedSection) {
+          throw new Error(`Bongiovanni: sección inválida en la fila ${rowNumber}.`);
+        }
+        const availableCategories = section.categories;
+        const selectedCategoryName = categoryName || (availableCategories.length === 1 ? availableCategories[0].name : "");
+        const selectedCategory = availableCategories.find((category) => category.name === selectedCategoryName);
+        if (!selectedCategory) {
+          const issue = selectedCategoryName ? "categoría no válida" : "falta Categoría";
+          throw new Error(`Bongiovanni: ${issue} para la sección ${selectedSection} en la fila ${rowNumber}.`);
+        }
         currentProduct = {
           id: `bongiovanni-${rowIndex}`,
           name,
+          sectionId,
+          categoryId: selectedCategory.id,
           unitPrice: 0,
           deliveryItems: [],
         };
-        products.push(currentProduct);
+        section.products.push(currentProduct);
+        selectedCategory.products.push(currentProduct);
       }
       if (!currentProduct || !outputName) {
         throw new Error(`Bongiovanni: producto o contenido de tanda faltante en la fila ${rowNumber}.`);
@@ -60,10 +94,7 @@
       currentProduct.deliveryItems.push({ name: outputName, quantity, unitPrice: price });
       currentProduct.unitPrice = Math.round((currentProduct.unitPrice + subtotal) * 100) / 100;
     });
-    return products.length ? [{
-      id: "tandas", name: "Tandas", summaryLabel: "Tandas", icon: "inventory_2",
-      type: "price-list", families: [], products,
-    }] : [];
+    return Array.from(sections.values());
   }
 
   function describeProduct(product) {

@@ -5,6 +5,11 @@ window.PEDIDOS_CLIENTS = {
     sheetId: "1tD0qUBePV0-UPSKwXmf9fNDHEO8u4dOtfDyvKerxVvc",
     sheetGid: "1969951303",
     catalogMode: "bongiovanni-batches",
+    sectionNames: ["Muebles", "Herrajes"],
+    categoriesBySection: {
+      Muebles: ["Emi"],
+      Herrajes: ["Tarugos", "Minifix"],
+    },
     summaryMode: "value",
     hideQuantitySteps: true,
     orderClearOnly: true,

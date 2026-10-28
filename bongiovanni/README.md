@@ -21,9 +21,12 @@ El bloque de categoría se reemplaza por un único botón `Limpiar pedido`, que
 vacía todas las cantidades del pedido.
 La pestaña superior se oculta mientras haya una sola sección disponible.
 
-El módulo `../src/catalogs/bongiovanni.js` interpreta las columnas `Producto`,
-`salen`, `Tanda`, `$ Unitario` y `$ Total`. Las filas sin `Producto` se incorporan
-al producto anterior: las sillas adicionales forman parte de esa misma tanda.
+El módulo `../src/catalogs/bongiovanni.js` interpreta las columnas `Sección`,
+`Categoría`, `Producto`, `salen`, `Tanda`, `$ Unitario` y `$ Total`. El catálogo
+se divide en las secciones `Muebles` y `Herrajes`, con las categorías `Emi` bajo
+`Muebles` y `Tarugos` y `Minifix` bajo `Herrajes`. Los productos actuales están
+asignados a `Muebles` → `Emi`. Las filas sin `Producto` se incorporan al producto
+anterior: las sillas adicionales forman parte de esa misma tanda.
 El precio de la tanda suma todos sus componentes. Si hay un total informado,
 se verifica que coincida con la cantidad multiplicada por el precio unitario.
 
