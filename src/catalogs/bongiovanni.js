@@ -1,5 +1,7 @@
 /** Interpreta las tandas de Bongiovanni y conserva todo su contenido. */
 (() => {
+  const COLORS = ["Blanco", "Verde", "Paraíso"];
+
   function normalizeHeader(value) {
     return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
   }
@@ -123,6 +125,16 @@
     return `${quantity} ${quantity === 1 ? "tanda" : "tandas"}: ${product.deliveryItems.map((item) => `${item.quantity * quantity} ${item.name}`).join(" + ")}`;
   }
 
+  /** Cada color es una selección independiente, pero el producto se muestra una sola vez. */
+  function getProductVariants(product) {
+    return COLORS.map((color) => ({
+      ...product,
+      id: `${product.id}-color-${slugify(color)}`,
+      name: `${product.name} — ${color}`,
+      color,
+    }));
+  }
+
   function buildOrderLines(product, quantity) {
     return [
       `- Tandas: ${quantity}`,
@@ -144,5 +156,6 @@
   window.PedidosApp.catalogAdapters = window.PedidosApp.catalogAdapters || {};
   window.PedidosApp.catalogAdapters["bongiovanni-batches"] = {
     createCatalog, describeProduct, describeSelection, buildOrderLines, buildXubioItems,
+    getProductVariants,
   };
 })();

@@ -30,8 +30,12 @@ function createXubioOrderData({ catalog, isLettersSection, lettersConfig, letter
     if (section.type === "price-list") {
       section.products.forEach((product) => {
         if (catalogAdapter?.buildXubioItems) {
-          catalogAdapter.buildXubioItems(product, getProductQty(product.id)).forEach((item) => {
-            addItem(item.descripcion, item.cantidad, item.precio);
+          const variants = catalogAdapter.getProductVariants?.(product) || [product];
+          // Compatibilidad con pedidos anteriores, que no tenían color almacenado.
+          (getProductQty(product.id) > 0 ? [product] : variants).forEach((variant) => {
+            catalogAdapter.buildXubioItems(variant, getProductQty(variant.id)).forEach((item) => {
+              addItem(item.descripcion, item.cantidad, item.precio);
+            });
           });
           return;
         }

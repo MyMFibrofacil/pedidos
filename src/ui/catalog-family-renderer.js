@@ -241,14 +241,16 @@
   }
   
   function renderValueProductRow(product, metaLabel = "", displayName = "") {
-    const qty = getProductQty(product.id);
+    const variants = catalogAdapter?.getProductVariants?.(product) || [product];
+    const hasColorVariants = variants.length > 1;
+    const qty = variants.reduce((total, variant) => total + getProductQty(variant.id), 0);
     const subtotal = qty * normalizePrice(product.unitPrice);
     const title = displayName || product.name;
     const productDetails = catalogAdapter?.describeProduct?.(product) || metaLabel;
     const previewPath = String(clientConfig?.productPreviews?.[product.previewKey] || "").trim();
   
     return `
-      <div class="p-4 flex items-start justify-between gap-3">
+      <div class="p-4 ${hasColorVariants ? "" : "flex items-start justify-between gap-3"}">
         <div class="flex min-w-0 flex-1 items-center gap-3">
           ${
             previewPath
@@ -270,7 +272,25 @@
           }
           </div>
         </div>
-        <div class="flex shrink-0 items-center bg-slate-100 rounded-lg p-1">
+        ${
+          hasColorVariants
+            ? `<div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Cantidad por color</p>
+                ${variants.map((variant) => {
+                  const variantQty = getProductQty(variant.id);
+                  return `
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="text-sm font-semibold text-slate-700">${escapeHtml(variant.color)}</p>
+                      <div class="flex shrink-0 items-center bg-slate-100 rounded-lg p-1">
+                        <button data-product-action="minus" data-product="${escapeHtml(variant.id)}" class="size-8 flex items-center justify-center rounded-md bg-white shadow-sm text-primary" type="button" aria-label="Restar ${escapeHtml(variant.color)}"><span class="material-symbols-outlined text-lg">remove</span></button>
+                        <input type="number" min="0" step="1" inputmode="numeric" value="${variantQty}" data-product-input="${escapeHtml(variant.id)}" class="w-12 h-8 text-center font-bold text-sm border-0 bg-transparent focus:ring-0 px-1" aria-label="Cantidad ${escapeHtml(variant.color)}" />
+                        <button data-product-action="plus" data-product="${escapeHtml(variant.id)}" class="size-8 flex items-center justify-center rounded-md ${variantQty > 0 ? "bg-primary text-white" : "bg-white text-primary"} shadow-sm" type="button" aria-label="Sumar ${escapeHtml(variant.color)}"><span class="material-symbols-outlined text-lg">add</span></button>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>`
+            : `<div class="flex shrink-0 items-center bg-slate-100 rounded-lg p-1">
           <button
             data-product-action="minus"
             data-product="${escapeHtml(product.id)}"
@@ -298,7 +318,8 @@
           >
             <span class="material-symbols-outlined text-lg">add</span>
           </button>
-        </div>
+        </div>`
+        }
       </div>
     `;
   }

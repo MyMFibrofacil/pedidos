@@ -436,7 +436,7 @@ function summary() {
     catalog, getAvailableSections, isLettersSection, summarizeLettersSection,
     getFamilyQty, getMaterialQty, getProductQty, getVariantQty,
     hasPlateVariants, getFamilyVariants, getFamilyProducts,
-    getSinglePlateReference, getProductDisplayName, lettersConfig,
+    getSinglePlateReference, getProductDisplayName, lettersConfig, catalogAdapter,
   });
 }
 

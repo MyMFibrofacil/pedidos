@@ -4,7 +4,7 @@ function calculateOrderSummary({
   catalog, getAvailableSections, isLettersSection, summarizeLettersSection,
   getFamilyQty, getMaterialQty, getProductQty, getVariantQty,
   hasPlateVariants, getFamilyVariants, getFamilyProducts,
-  getSinglePlateReference, getProductDisplayName, lettersConfig,
+  getSinglePlateReference, getProductDisplayName, lettersConfig, catalogAdapter,
 }) {
   const sections = [];
   let totalCount = 0;
@@ -128,10 +128,15 @@ function calculateOrderSummary({
 
     if (section.type === "price-list") {
       const selectedProducts = section.products
-        .map((product) => ({
-          ...product,
-          qty: getProductQty(product.id),
-        }))
+        .flatMap((product) => {
+          const variants = catalogAdapter?.getProductVariants?.(product) || [product];
+          // Conserva pedidos o pruebas creados antes de que existiera la división por color.
+          return (getProductQty(product.id) > 0 ? [product] : variants)
+          .map((variant) => ({
+            ...variant,
+            qty: getProductQty(variant.id),
+          }));
+        })
         .filter((product) => product.qty > 0);
 
       if (selectedProducts.length === 0) return;
