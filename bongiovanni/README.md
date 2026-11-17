@@ -14,18 +14,22 @@ pestaña `Bongiovanni` (`1969951303`) de `Lista Precios a Medida`.
 
 ## Cantidades y precios
 
-Cada cantidad elegida corresponde a una tanda completa. Los botones `+` y `−`
-agregan o quitan una tanda; también se puede escribir la cantidad. No hay
-selectores `1 en 1`, `5 en 5` o `10 en 10`, ni indicador de paso.
+Cada cantidad elegida corresponde a una tanda completa. En todas las categorías
+salvo `Herrajes`, Victoria distribuye la cantidad entre `Blanco`, `Verde` y `Paraíso`; los botones
+`+` y `−` agregan o quitan una tanda de ese color, y también se puede escribir
+la cantidad. En `Herrajes`, la cantidad se pide directamente para el producto,
+sin distinción de color. El resumen, correo y presupuesto de Xubio conservan el
+color de cada tanda donde corresponde. No hay selectores `1 en 1`, `5 en 5` o
+`10 en 10`, ni indicador de paso.
 El bloque de categoría se reemplaza por un único botón `Limpiar pedido`, que
 vacía todas las cantidades del pedido.
 La pestaña superior se oculta mientras haya una sola sección disponible.
 
 El módulo `../src/catalogs/bongiovanni.js` interpreta las columnas `Sección`,
 `Categoría`, `Producto`, `salen`, `Tanda`, `$ Unitario` y `$ Total`. El catálogo
-se divide en las secciones `Muebles` y `Herrajes`, con las categorías `Emi` bajo
-`Muebles` y `Tarugos` y `Minifix` bajo `Herrajes`. Los productos actuales están
-asignados a `Muebles` → `Emi`. Las filas sin `Producto` se incorporan al producto
+agrupa automáticamente los productos usando los valores de `Sección` y
+`Categoría` leídos en cada fila de la hoja. Se pueden agregar o renombrar grupos
+allí sin cambiar el código. Las filas sin `Producto` se incorporan al producto
 anterior: las sillas adicionales forman parte de esa misma tanda.
 El precio de la tanda suma todos sus componentes. Si hay un total informado,
 se verifica que coincida con la cantidad multiplicada por el precio unitario.
