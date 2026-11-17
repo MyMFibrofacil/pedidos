@@ -81,6 +81,7 @@
           name,
           sectionId: section.id,
           categoryId: selectedCategory.id,
+          categoryName: selectedCategory.name,
           unitPrice: 0,
           deliveryItems: [],
         };
@@ -125,8 +126,9 @@
     return `${quantity} ${quantity === 1 ? "tanda" : "tandas"}: ${product.deliveryItems.map((item) => `${item.quantity * quantity} ${item.name}`).join(" + ")}`;
   }
 
-  /** Cada color es una selección independiente, pero el producto se muestra una sola vez. */
+  /** Herrajes se pide sin color; las demás categorías separan la cantidad por color. */
   function getProductVariants(product) {
+    if (normalizeHeader(product.categoryName) === "herrajes") return [product];
     return COLORS.map((color) => ({
       ...product,
       id: `${product.id}-color-${slugify(color)}`,
