@@ -80,6 +80,7 @@
           id: `bongiovanni-${rowIndex}`,
           name,
           sectionId: section.id,
+          sectionName: section.name,
           categoryId: selectedCategory.id,
           categoryName: selectedCategory.name,
           unitPrice: 0,
@@ -126,9 +127,9 @@
     return `${quantity} ${quantity === 1 ? "tanda" : "tandas"}: ${product.deliveryItems.map((item) => `${item.quantity * quantity} ${item.name}`).join(" + ")}`;
   }
 
-  /** Herrajes se pide sin color; las demás categorías separan la cantidad por color. */
+  /** La sección Herrajes se pide sin color; las demás separan la cantidad por color. */
   function getProductVariants(product) {
-    if (normalizeHeader(product.categoryName) === "herrajes") return [product];
+    if (normalizeHeader(product.sectionName) === "herrajes") return [product];
     return COLORS.map((color) => ({
       ...product,
       id: `${product.id}-color-${slugify(color)}`,
